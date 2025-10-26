@@ -5,10 +5,11 @@ import { NotificationService } from '@/lib/notification-service'
 // Get notification templates
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    const notificationService = new NotificationService()
+    const notificationService = new NotificationService(supabase)
     const templates = await notificationService.getTemplates(type || undefined)
 
     return NextResponse.json(templates)

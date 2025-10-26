@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Send notification to user
     if (order?.user_id) {
-      const notificationService = new NotificationService()
+      const notificationService = new NotificationService(supabase)
       
       // Send appropriate notification based on status
       let notificationStatus = status

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '50')
 
-    const notificationService = new NotificationService()
+    const notificationService = new NotificationService(supabase)
     const notifications = await notificationService.getUserNotifications(user.id, limit)
 
     return NextResponse.json(notifications)
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const notificationData = await request.json()
     
-    const notificationService = new NotificationService()
+    const notificationService = new NotificationService(supabase)
     const success = await notificationService.sendNotificationToUser(user.id, notificationData)
 
     if (!success) {

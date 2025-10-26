@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export interface NotificationTemplate {
   id: string
@@ -29,8 +29,14 @@ export interface PushSubscription {
 }
 
 export class NotificationService {
+  private supabase: SupabaseClient
+
+  constructor(supabaseClient: SupabaseClient) {
+    this.supabase = supabaseClient
+  }
+
   private getSupabaseClient() {
-    return createClient()
+    return this.supabase
   }
 
   // Send push notification
@@ -41,7 +47,7 @@ export class NotificationService {
     actionUrl?: string
   }): Promise<boolean> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       // Check if user has push notifications enabled
       const { data: preferences } = await supabase
         .from('user_notification_preferences')
@@ -113,7 +119,7 @@ export class NotificationService {
   // Send email notification
   async sendEmailNotification(userId: string, templateId: string, data: any = {}): Promise<boolean> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       // Check if user has email notifications enabled
       const { data: preferences } = await supabase
         .from('user_notification_preferences')
@@ -204,7 +210,7 @@ export class NotificationService {
       }
 
       // Log notification
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       await supabase.rpc('log_notification_delivery', {
         p_user_id: userId,
         p_campaign_id: notification.campaignId || null,
@@ -236,7 +242,7 @@ export class NotificationService {
     scheduledAt?: Date
   }): Promise<{ data: any; error: any }> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       const { data, error } = await supabase
         .from('notification_campaigns')
         .insert({
@@ -259,7 +265,7 @@ export class NotificationService {
   // Send campaign to users
   async sendCampaign(campaignId: string): Promise<boolean> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       const { data: campaign } = await supabase
         .from('notification_campaigns')
         .select(`
@@ -317,7 +323,7 @@ export class NotificationService {
   // Get target users based on campaign criteria
   private async getTargetUsers(criteria: any): Promise<{ user_id: string }[]> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       let query = supabase
         .from('user_notification_preferences')
         .select('user_id')
@@ -377,7 +383,7 @@ export class NotificationService {
   // Get notification templates
   async getTemplates(type?: string): Promise<NotificationTemplate[]> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       let query = supabase
         .from('notification_templates')
         .select('*')
@@ -400,7 +406,7 @@ export class NotificationService {
   // Get user's notification preferences
   async getUserPreferences(userId: string): Promise<any> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       const { data, error } = await supabase
         .from('user_notification_preferences')
         .select('*')
@@ -418,7 +424,7 @@ export class NotificationService {
   // Update user's notification preferences
   async updateUserPreferences(userId: string, preferences: any): Promise<boolean> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       const { error } = await supabase
         .from('user_notification_preferences')
         .upsert({
@@ -438,7 +444,7 @@ export class NotificationService {
   // Get user's notifications
   async getUserNotifications(userId: string, limit: number = 50): Promise<any[]> {
     try {
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       const { data, error } = await supabase
         .from('user_notifications')
         .select('*')
@@ -475,7 +481,7 @@ export class NotificationService {
       }
 
       // Get template
-      const supabase = await this.getSupabaseClient()
+      const supabase = this.getSupabaseClient()
       const { data: template } = await supabase
         .from('notification_templates')
         .select('*')

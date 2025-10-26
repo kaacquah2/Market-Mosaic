@@ -8,5 +8,13 @@ export function createClient() {
     throw new Error('Missing Supabase environment variables')
   }
 
-  return createBrowserClient(supabaseUrl, supabaseKey)
+  // Configure browser client with standard settings for OAuth/PKCE
+  return createBrowserClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: true, // Required for PKCE verifier storage
+      autoRefreshToken: true, // Enable auto-refresh for better session management
+      detectSessionInUrl: true, // Automatically detect and handle OAuth callbacks
+      flowType: 'pkce', // Use PKCE flow for security
+    },
+  })
 }

@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     const campaignData = await request.json()
     
-    const notificationService = new NotificationService()
+    const notificationService = new NotificationService(supabase)
     const { data, error } = await notificationService.createPromotionCampaign({
       name: campaignData.name,
       type: campaignData.type,

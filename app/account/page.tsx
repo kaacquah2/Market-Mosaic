@@ -4,9 +4,13 @@ import { createClient } from "@/lib/supabase/server"
 import { logoutAction } from "@/app/admin/actions"
 import { Button } from "@/components/ui/button"
 import { Navigation } from "@/components/navigation"
-import { Package, Settings, LogOut, RotateCcw, Bell } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Package, Settings, LogOut, RotateCcw, Bell, User, CreditCard, MapPin } from "lucide-react"
 import { TwoFactorSettings } from "@/components/two-factor-auth"
 import { PushNotificationSetup } from "@/components/push-notification-setup"
+import { ProfileEditor } from "@/components/profile-editor"
+import { SettingsManager } from "@/components/settings-manager"
+import { AccountSettings } from "@/components/account-settings"
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -39,7 +43,7 @@ export default async function AccountPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">My Account</h1>
             <p className="text-muted-foreground flex items-center gap-2">
@@ -82,90 +86,119 @@ export default async function AccountPage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/products">
-              <Button className="bg-primary hover:bg-primary/90">
-                <Package className="mr-2 h-4 w-4" />
-                Continue Shopping
-              </Button>
-            </Link>
-            <Link href="/account/returns">
-              <Button variant="outline" className="bg-transparent">
-                <RotateCcw className="mr-2 h-4 w-4" />
-                My Returns
-              </Button>
-            </Link>
-            <Link href="/support">
-              <Button variant="outline" className="bg-transparent">
-                <Settings className="mr-2 h-4 w-4" />
-                Get Support
-              </Button>
-            </Link>
-          </div>
-        </div>
+        {/* Tabbed Interface */}
+        <Tabs defaultValue="orders" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsTrigger value="orders" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Orders
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Security
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Order History */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6">Order History</h2>
-
-          {orders && orders.length > 0 ? (
-            <div className="space-y-4">
-              {orders.map((order: any) => (
-                <Link key={order.id} href={`/account/orders/${order.id}`}>
-                  <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer border border-primary/20 group">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-1">Order ID</p>
-                        <p className="font-mono text-sm font-semibold group-hover:text-primary transition-colors">
-                          {order.id.slice(0, 8)}...
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground mb-1">Total</p>
-                        <p className="text-2xl font-bold text-primary">
-                          ${Number.parseFloat(order.total || 0).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <p className="text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
-                      <span className="bg-accent/20 text-accent px-3 py-1 rounded text-xs font-semibold">
-                        {order.status || "pending"}
-                      </span>
-                    </div>
-                  </div>
+          {/* Orders Tab */}
+          <TabsContent value="orders" className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Order History</h2>
+              <div className="flex gap-3">
+                <Link href="/products">
+                  <Button className="bg-primary hover:bg-primary/90">
+                    <Package className="mr-2 h-4 w-4" />
+                    Continue Shopping
+                  </Button>
                 </Link>
-              ))}
+                <Link href="/account/returns">
+                  <Button variant="outline">
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    My Returns
+                  </Button>
+                </Link>
+              </div>
             </div>
-          ) : (
-            <div className="text-center py-12 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border border-primary/20">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground mb-4">No orders yet</p>
-              <Link href="/products">
-                <Button>Start Shopping</Button>
-              </Link>
+
+            {orders && orders.length > 0 ? (
+              <div className="space-y-4">
+                {orders.map((order: any) => (
+                  <Link key={order.id} href={`/account/orders/${order.id}`}>
+                    <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer border border-primary/20 group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Order ID</p>
+                          <p className="font-mono text-sm font-semibold group-hover:text-primary transition-colors">
+                            {order.id.slice(0, 8)}...
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground mb-1">Total</p>
+                          <p className="text-2xl font-bold text-primary">
+                            ${Number.parseFloat(order.total || 0).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <p className="text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</p>
+                        <span className="bg-accent/20 text-accent px-3 py-1 rounded text-xs font-semibold">
+                          {order.status || "pending"}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg border border-primary/20">
+                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <p className="text-muted-foreground mb-4">No orders yet</p>
+                <Link href="/products">
+                  <Button>Start Shopping</Button>
+                </Link>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            <ProfileEditor />
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <div className="space-y-6">
+              <SettingsManager />
+              <AccountSettings />
             </div>
-          )}
-        </div>
+          </TabsContent>
 
-        {/* Security Settings */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold mb-8">Security Settings</h2>
-          <TwoFactorSettings />
-        </div>
+          {/* Security Tab */}
+          <TabsContent value="security" className="space-y-6">
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-bold mb-6">Security Settings</h2>
+                <TwoFactorSettings />
+              </div>
 
-        {/* Notification Settings */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-            <Bell className="h-6 w-6" />
-            Notification Settings
-          </h2>
-          <PushNotificationSetup />
-        </div>
+              <div className="pt-8 border-t">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                  <Bell className="h-6 w-6" />
+                  Notification Settings
+                </h2>
+                <PushNotificationSetup />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

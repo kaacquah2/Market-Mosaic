@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS public.two_factor_sessions (
 -- Enable RLS on two_factor_sessions table
 ALTER TABLE public.two_factor_sessions ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "two_factor_sessions_select_own" ON public.two_factor_sessions;
+DROP POLICY IF EXISTS "two_factor_sessions_insert_own" ON public.two_factor_sessions;
+DROP POLICY IF EXISTS "two_factor_sessions_update_own" ON public.two_factor_sessions;
+DROP POLICY IF EXISTS "two_factor_sessions_delete_own" ON public.two_factor_sessions;
+
 -- Users can view their own 2FA sessions
 CREATE POLICY "two_factor_sessions_select_own"
   ON public.two_factor_sessions FOR SELECT

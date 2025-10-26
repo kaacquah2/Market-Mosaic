@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Campaign ID is required' }, { status: 400 })
     }
 
-    const notificationService = new NotificationService()
+    const notificationService = new NotificationService(supabase)
     const success = await notificationService.sendCampaign(campaignId)
 
     if (!success) {

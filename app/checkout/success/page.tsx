@@ -51,7 +51,7 @@ export default function CheckoutSuccessPage() {
             })
 
             // Send push notification for order confirmation
-            const notificationService = new NotificationService()
+            const notificationService = new NotificationService(supabase)
             await notificationService.sendOrderUpdateNotification(user.id, orders.id, 'confirmed')
           }
         } catch (error) {

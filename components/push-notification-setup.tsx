@@ -57,7 +57,8 @@ export function PushNotificationSetup() {
 
   const fetchUserPreferences = async (userId: string) => {
     try {
-      const notificationService = new NotificationService()
+      const supabase = createClient()
+      const notificationService = new NotificationService(supabase)
       const userPreferences = await notificationService.getUserPreferences(userId)
       
       if (userPreferences) {
@@ -112,7 +113,8 @@ export function PushNotificationSetup() {
       setIsSubscribed(true)
       
       // Show success message
-      const notificationService = new NotificationService()
+      const supabaseClient = createClient()
+      const notificationService = new NotificationService(supabaseClient)
       await notificationService.sendNotificationToUser(user.id, {
         title: 'Notifications Enabled! 🔔',
         message: 'You\'ll now receive updates about your orders and special offers.',
@@ -163,7 +165,8 @@ export function PushNotificationSetup() {
       const updatedPreferences = { ...preferences, [key]: value }
       setPreferences(updatedPreferences)
 
-      const notificationService = new NotificationService()
+      const supabaseClient = createClient()
+      const notificationService = new NotificationService(supabaseClient)
       await notificationService.updateUserPreferences(user.id, updatedPreferences)
     } catch (error) {
       console.error('Error updating preferences:', error)
@@ -363,7 +366,8 @@ export function PushNotificationSetup() {
           <CardContent>
             <Button
               onClick={async () => {
-                const notificationService = new NotificationService()
+                const supabaseClient = createClient()
+                const notificationService = new NotificationService(supabaseClient)
                 await notificationService.sendNotificationToUser(user.id, {
                   title: 'Test Notification 🧪',
                   message: 'This is a test notification to verify everything is working correctly!',

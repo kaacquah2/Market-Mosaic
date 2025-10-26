@@ -113,7 +113,7 @@ export class AIRecommendationService {
         wishlistItems
       }
 
-      cacheService.set(cacheKey, preferences, 300000) // Cache for 5 minutes
+      cacheService.set(cacheKey, preferences, 180000) // Cache for 3 minutes - reduced to save space
       return preferences
 
     } catch (error) {
@@ -328,7 +328,7 @@ export class AIRecommendationService {
         .sort((a, b) => b.score - a.score)
         .slice(0, limit)
 
-      cacheService.set(cacheKey, trendingProducts, 300000) // Cache for 5 minutes
+      cacheService.set(cacheKey, trendingProducts, 180000) // Cache for 3 minutes - reduced to save space
       return trendingProducts
 
     } catch (error) {
@@ -381,7 +381,7 @@ export class AIRecommendationService {
         recentlyViewed: recentlyViewedProducts
       }
 
-      cacheService.set(cacheKey, result, 300000) // Cache for 5 minutes
+      cacheService.set(cacheKey, result, 180000) // Cache for 3 minutes - reduced to save space
       return result
 
     } catch (error) {

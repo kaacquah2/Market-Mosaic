@@ -8,9 +8,9 @@ interface CacheEntry<T> {
 
 export class CacheService {
   private cache = new Map<string, CacheEntry<any>>()
-  private maxSize = 100 // Maximum number of entries
+  private maxSize = 50 // Maximum number of entries - reduced to save space
 
-  set<T>(key: string, data: T, ttl: number = 300000): void { // Default 5 minutes
+  set<T>(key: string, data: T, ttl: number = 180000): void { // Default 3 minutes - reduced from 5
     // Remove oldest entries if cache is full
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value
@@ -98,7 +98,7 @@ export const cacheService = new CacheService()
 export function useCache<T>(
   key: string,
   fetcher: () => Promise<T>,
-  ttl: number = 300000
+  ttl: number = 180000 // Reduced from 300000 (5 min) to 180000 (3 min)
 ): { data: T | null; loading: boolean; error: Error | null; refetch: () => void } {
   const [data, setData] = React.useState<T | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -142,7 +142,7 @@ export function useCache<T>(
 export function withCache<T extends any[], R>(
   fn: (...args: T) => Promise<R>,
   keyGenerator: (...args: T) => string,
-  ttl: number = 300000
+  ttl: number = 180000 // Reduced from 300000 (5 min) to 180000 (3 min)
 ) {
   return async (...args: T): Promise<R> => {
     const key = keyGenerator(...args)

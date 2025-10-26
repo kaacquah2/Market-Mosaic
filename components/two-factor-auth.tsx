@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Shield, Smartphone, Key, AlertTriangle, CheckCircle, Copy, Download } from "lucide-react"
+import { Shield, Smartphone, Key, AlertTriangle, CheckCircle, Copy, Download, Mail } from "lucide-react"
 import { twoFactorService, TwoFactorSetup } from "@/lib/two-factor-service"
 import { createClient } from "@/lib/supabase/client"
 import Image from "next/image"
@@ -159,6 +159,11 @@ function Setup2FADialog({ onSetupComplete }: { onSetupComplete: () => void }) {
       const data = await twoFactorService.generateSecret(user.id)
       setSetupData(data)
       setStep('verify')
+      
+      // Show user-friendly message about email
+      if (data.emailSent && data.message) {
+        alert(data.message)
+      }
     } catch (error) {
       console.error("Error setting up 2FA:", error)
       alert("Failed to set up 2FA")
@@ -207,35 +212,28 @@ function Setup2FADialog({ onSetupComplete }: { onSetupComplete: () => void }) {
         {step === 'setup' ? (
           <div className="space-y-4">
             <div className="text-center">
-              <Smartphone className="h-12 w-12 mx-auto mb-4 text-primary" />
-              <h3 className="font-semibold mb-2">Step 1: Scan QR Code</h3>
+              <Mail className="h-12 w-12 mx-auto mb-4 text-primary" />
+              <h3 className="font-semibold mb-2">Step 1: Get Verification Code</h3>
               <p className="text-sm text-muted-foreground">
-                Use an authenticator app like Google Authenticator or Authy to scan the QR code.
+                We'll send a 6-digit verification code to your email address. You'll also receive backup codes for emergency access.
               </p>
             </div>
             
             <Button onClick={handleSetup} disabled={loading} className="w-full">
-              {loading ? "Generating..." : "Generate QR Code"}
+              {loading ? "Sending Code..." : "Send Verification Code to Email"}
             </Button>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="text-center">
-              <h3 className="font-semibold mb-2">Step 2: Verify Setup</h3>
+              <h3 className="font-semibold mb-2">Step 2: Enter Verification Code</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Scan this QR code with your authenticator app, then enter the verification code.
+                Check your email for the 6-digit verification code. Enter it below to complete the setup.
               </p>
-              
-              {setupData && (
-                <div className="flex justify-center mb-4">
-                  <Image
-                    src={setupData.qrCodeUrl}
-                    alt="2FA QR Code"
-                    width={200}
-                    height={200}
-                    className="border rounded"
-                  />
-                </div>
+              {setupData?.emailSent && (
+                <p className="text-sm text-green-600 font-medium mb-4">
+                  ✓ Code sent to your email!
+                </p>
               )}
             </div>
             

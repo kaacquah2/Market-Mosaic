@@ -1,5 +1,3 @@
-import speakeasy from 'speakeasy'
-import QRCode from 'qrcode'
 import { createClient } from "@/lib/supabase/client"
 
 export interface TwoFactorSetup {
@@ -17,36 +15,22 @@ export class TwoFactorService {
   private supabase = createClient()
 
   async generateSecret(userId: string): Promise<TwoFactorSetup> {
-    // Generate a new secret
-    const secret = speakeasy.generateSecret({
-      name: `Market Mosaic (${userId})`,
-      issuer: 'Market Mosaic',
-      length: 32
-    })
-
-    // Generate QR code URL
-    const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!)
-
-    // Generate backup codes
-    const backupCodes = this.generateBackupCodes()
-
-    // Store the secret and backup codes in the database
-    const { error } = await this.supabase
-      .from('user_profiles')
-      .update({
-        two_factor_secret: secret.base32,
-        backup_codes: backupCodes
+    try {
+      const response = await fetch('/api/2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate' })
       })
-      .eq('user_id', userId)
-
-    if (error) {
-      throw new Error('Failed to store 2FA secret')
-    }
-
-    return {
-      secret: secret.base32,
-      qrCodeUrl,
-      backupCodes
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate 2FA secret')
+      }
+      
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error generating 2FA secret:', error)
+      throw new Error('Failed to generate 2FA secret')
     }
   }
 
@@ -95,57 +79,63 @@ export class TwoFactorService {
   }
 
   async enable2FA(userId: string, token: string): Promise<boolean> {
-    const verification = await this.verifyToken(userId, token)
-    
-    if (!verification.isValid) {
+    try {
+      const response = await fetch('/api/2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', code: token })
+      })
+      
+      if (!response.ok) {
+        return false
+      }
+      
+      const data = await response.json()
+      return data.success === true
+    } catch (error) {
+      console.error('Error enabling 2FA:', error)
       return false
     }
-
-    // Enable 2FA for the user
-    const { error } = await this.supabase
-      .from('user_profiles')
-      .update({
-        two_factor_enabled: true,
-        last_2fa_verification: new Date().toISOString()
-      })
-      .eq('user_id', userId)
-
-    return !error
   }
 
   async disable2FA(userId: string, token: string): Promise<boolean> {
-    const verification = await this.verifyToken(userId, token)
-    
-    if (!verification.isValid) {
+    try {
+      const response = await fetch('/api/2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'disable', code: token })
+      })
+      
+      if (!response.ok) {
+        return false
+      }
+      
+      const data = await response.json()
+      return data.success === true
+    } catch (error) {
+      console.error('Error disabling 2FA:', error)
       return false
     }
-
-    // Disable 2FA for the user
-    const { error } = await this.supabase
-      .from('user_profiles')
-      .update({
-        two_factor_enabled: false,
-        two_factor_secret: null,
-        backup_codes: null,
-        last_2fa_verification: null
-      })
-      .eq('user_id', userId)
-
-    return !error
   }
 
   async is2FAEnabled(userId: string): Promise<boolean> {
-    const { data: profile, error } = await this.supabase
-      .from('user_profiles')
-      .select('two_factor_enabled')
-      .eq('user_id', userId)
-      .single()
-
-    if (error || !profile) {
+    try {
+      const response = await fetch('/api/2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'check' })
+      })
+      
+      if (!response.ok) {
+        return false
+      }
+      
+      const data = await response.json()
+      return data.enabled || false
+    } catch (error) {
+      console.error('Error checking 2FA status:', error)
       return false
     }
-
-    return profile.two_factor_enabled || false
   }
 
   async create2FASession(userId: string): Promise<string> {

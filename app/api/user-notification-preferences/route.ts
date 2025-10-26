@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const notificationService = new NotificationService()
+    const notificationService = new NotificationService(supabase)
     const preferences = await notificationService.getUserPreferences(user.id)
 
     return NextResponse.json(preferences || {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     const preferences = await request.json()
     
-    const notificationService = new NotificationService()
+    const notificationService = new NotificationService(supabase)
     const success = await notificationService.updateUserPreferences(user.id, preferences)
 
     if (!success) {
