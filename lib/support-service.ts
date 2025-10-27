@@ -121,24 +121,31 @@ export class SupportService {
       return []
     }
 
+    // Simplified query - just get tickets without joins
     const { data, error } = await this.supabase
       .from("support_tickets")
-      .select(`
-        *,
-        support_messages (
-          *,
-          user_profiles (
-            first_name,
-            last_name
-          )
-        )
-      `)
+      .select('*')
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
 
     if (error) {
       console.error("Error fetching tickets:", error)
       return []
+    }
+
+    // If you need messages, fetch them separately
+    if (data && data.length > 0) {
+      const ticketIds = data.map(t => t.id)
+      const { data: messages } = await this.supabase
+        .from("support_messages")
+        .select('*')
+        .in('ticket_id', ticketIds)
+      
+      // Attach messages to tickets
+      return data.map(ticket => ({
+        ...ticket,
+        support_messages: messages?.filter(m => m.ticket_id === ticket.id) || []
+      }))
     }
 
     return data || []
@@ -151,18 +158,10 @@ export class SupportService {
       return null
     }
 
-    const { data, error } = await this.supabase
+    // Simplified query - get ticket without joins
+    const { data: ticket, error } = await this.supabase
       .from("support_tickets")
-      .select(`
-        *,
-        support_messages (
-          *,
-          user_profiles (
-            first_name,
-            last_name
-          )
-        )
-      `)
+      .select('*')
       .eq("id", ticketId)
       .eq("user_id", user.id)
       .single()
@@ -172,7 +171,22 @@ export class SupportService {
       return null
     }
 
-    return data
+    if (!ticket) {
+      return null
+    }
+
+    // Fetch messages separately
+    const { data: messages } = await this.supabase
+      .from("support_messages")
+      .select('*')
+      .eq('ticket_id', ticketId)
+      .order('created_at', { ascending: true })
+
+    // Attach messages to ticket
+    return {
+      ...ticket,
+      support_messages: messages || []
+    }
   }
 
   async updateTicketStatus(ticketId: string, status: SupportTicket['status']): Promise<boolean> {

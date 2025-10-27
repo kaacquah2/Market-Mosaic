@@ -119,9 +119,19 @@ export default function CheckoutPage() {
 
       // Check if response is ok
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Checkout API error:", errorText)
-        alert("Checkout failed. Please try again.")
+        let errorMessage = "Checkout failed. Please try again."
+        try {
+          const errorData = await response.json()
+          console.error("Checkout API error:", errorData)
+          if (errorData.error) {
+            errorMessage = errorData.error
+          }
+        } catch (e) {
+          // If JSON parsing fails, try as text
+          const errorText = await response.text()
+          console.error("Checkout API error (text):", errorText)
+        }
+        alert(errorMessage)
         return
       }
 

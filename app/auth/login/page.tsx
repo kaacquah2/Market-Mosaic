@@ -25,16 +25,54 @@ export default function LoginPage() {
   const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false)
   const router = useRouter()
 
-  // Check for OAuth error in URL params
+  // Check for OAuth error in URL params and prevent auto-redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const errorParam = params.get("error")
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    
+    // Check for error in URL
+    const errorParam = params.get("error") || hashParams.get("error")
     if (errorParam) {
       setError(errorParam)
-      // Clean up URL
-      window.history.replaceState({}, "", "/auth/login")
     }
-  }, [])
+    
+    // Clean up any OAuth-related parameters from URL (access_token, code, etc.)
+    // These should only be processed on the callback page
+    const oauthParams = ['access_token', 'refresh_token', 'code', 'error', 'error_description', 'state']
+    let hasOAuthParams = false
+    
+    oauthParams.forEach(param => {
+      if (params.has(param) || hashParams.has(param)) {
+        hasOAuthParams = true
+      }
+    })
+    
+    // If there are OAuth params on the login page (shouldn't happen), clean the URL
+    if (hasOAuthParams) {
+      console.log("Cleaning OAuth parameters from login page URL")
+      window.history.replaceState({}, "", "/auth/login")
+      
+      // If there's an error, keep it displayed
+      if (!errorParam) {
+        // Reload the page to start fresh
+        window.location.href = "/auth/login"
+      }
+    }
+    
+    // Check if user is already logged in and redirect to home
+    const checkExistingSession = async () => {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      // Only redirect if there's a valid, active session
+      if (session && session.user) {
+        console.log("User already logged in, redirecting to home")
+        router.push("/")
+      }
+    }
+    
+    checkExistingSession()
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,16 +100,35 @@ export default function LoginPage() {
     setError(null)
 
     try {
+      // Signal that OAuth is starting (prevents session manager from clearing PKCE)
+      if (typeof window !== 'undefined' && (window as any).__oauthStart) {
+        (window as any).__oauthStart()
+      }
+      sessionStorage.setItem('oauth-in-progress', 'true')
+      
+      console.log('🔐 Starting OAuth flow with', provider)
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       })
+      
       if (error) throw error
+      
+      // OAuth redirect will happen automatically
+      console.log('🔐 OAuth redirect initiated')
     } catch (error: unknown) {
+      console.error('❌ OAuth error:', error)
       setError(error instanceof Error ? error.message : "An error occurred")
       setIsLoading(false)
+      
+      // Clear OAuth flag on error
+      sessionStorage.removeItem('oauth-in-progress')
+      if (typeof window !== 'undefined' && (window as any).__oauthComplete) {
+        (window as any).__oauthComplete()
+      }
     }
   }
 

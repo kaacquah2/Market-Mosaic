@@ -28,7 +28,19 @@ const nextConfig = {
         fs: false,
       };
     }
+    
+    // Suppress cache serialization warnings - set infrastructure logging to only show errors
+    config.infrastructureLogging = {
+      level: 'error',
+    };
+    
     return config;
+  },
+  // Suppress webpack cache warnings in console
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
   },
   headers: async () => {
     return [
@@ -74,3 +86,4 @@ const nextConfig = {
 }
 
 export default nextConfig
+

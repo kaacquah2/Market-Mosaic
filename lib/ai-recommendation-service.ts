@@ -34,22 +34,37 @@ export class AIRecommendationService {
     if (cached) return cached
 
     try {
-      // Get user's order history
+      // Get user's order history (simplified - no joins)
       const { data: orders } = await this.supabase
         .from('orders')
-        .select(`
-          total,
-          order_items (
-            product_id,
-            products (
-              category,
-              brand,
-              price
-            )
-          )
-        `)
+        .select('id, total')
         .eq('user_id', userId)
         .eq('status', 'completed')
+
+      // Get order items for these orders
+      const orderIds = orders?.map(o => o.id) || []
+      let orderItems: any[] = []
+      let products: any[] = []
+      
+      if (orderIds.length > 0) {
+        const { data: items } = await this.supabase
+          .from('order_items')
+          .select('product_id, order_id')
+          .in('order_id', orderIds)
+        
+        orderItems = items || []
+        
+        // Get products for these order items
+        const productIds = Array.from(new Set(orderItems.map(i => i.product_id)))
+        if (productIds.length > 0) {
+          const { data: prods } = await this.supabase
+            .from('products')
+            .select('id, category, brand, price')
+            .in('id', productIds)
+          
+          products = prods || []
+        }
+      }
 
       // Get user's wishlist
       const { data: wishlist } = await this.supabase
@@ -70,19 +85,22 @@ export class AIRecommendationService {
       const viewedProducts: string[] = []
       const wishlistItems: string[] = []
       let totalSpent = 0
-      let orderCount = 0
+      let orderCount = orders?.length || 0
 
+      // Calculate total spent
       orders?.forEach(order => {
-        totalSpent += parseFloat(order.total)
-        orderCount++
+        totalSpent += parseFloat(order.total || '0')
+      })
+
+      // Build purchase history and extract categories/brands
+      orderItems.forEach((item: any) => {
+        purchaseHistory.push(item.product_id)
         
-        order.order_items?.forEach((item: any) => {
-          if (item.products) {
-            categories.push(item.products.category)
-            if (item.products.brand) brands.push(item.products.brand)
-            purchaseHistory.push(item.product_id)
-          }
-        })
+        const product = products.find(p => p.id === item.product_id)
+        if (product) {
+          if (product.category) categories.push(product.category)
+          if (product.brand) brands.push(product.brand)
+        }
       })
 
       wishlist?.forEach(item => {
@@ -94,9 +112,7 @@ export class AIRecommendationService {
       })
 
       // Calculate price range from purchase history
-      const prices = orders?.flatMap(order => 
-        order.order_items?.map((item: any) => item.products?.price || 0) || []
-      ) || []
+      const prices = products.map(p => p.price).filter(p => p > 0)
 
       const priceRange = {
         min: prices.length > 0 ? Math.min(...prices) * 0.5 : 0,
@@ -142,7 +158,7 @@ export class AIRecommendationService {
       const { data: products } = await this.supabase
         .from('products')
         .select('*')
-        .eq('in_stock', true)
+        .eq('is_active', true)
 
       if (!products) return []
 
@@ -239,7 +255,7 @@ export class AIRecommendationService {
       const { data: products } = await this.supabase
         .from('products')
         .select('*')
-        .eq('in_stock', true)
+        .eq('is_active', true)
         .neq('id', productId)
 
       if (!products) return []
@@ -294,41 +310,30 @@ export class AIRecommendationService {
     if (cached) return cached
 
     try {
-      // Get products with recent orders
-      const { data: products } = await this.supabase
+      // Get products - simplified query without order_items relationship
+      const { data: products, error: productsError } = await this.supabase
         .from('products')
-        .select(`
-          *,
-          order_items (
-            created_at
-          )
-        `)
-        .eq('in_stock', true)
+        .select('*')
+        .eq('is_active', true)
         .gte('average_rating', 4) // Only highly rated products
         .order('average_rating', { ascending: false })
+        .limit(limit)
+
+      if (productsError) {
+        console.error('Error fetching trending products:', productsError)
+        return []
+      }
 
       if (!products) return []
 
-      const trendingProducts = products
-        .map(product => {
-          // Count recent orders (last 30 days)
-          const recentOrders = product.order_items?.filter((item: any) => {
-            const orderDate = new Date(item.created_at)
-            const thirtyDaysAgo = new Date()
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-            return orderDate >= thirtyDaysAgo
-          }).length || 0
+      // Transform to recommendations with simpler scoring based on rating
+      const trendingProducts = products.map(product => ({
+        ...product,
+        score: (product.average_rating || 0) * 10 + (product.review_count || 0),
+        reason: `${product.average_rating?.toFixed(1)}★ rating (${product.review_count || 0} reviews)`
+      }))
 
-          return {
-            ...product,
-            score: recentOrders * 10 + (product.average_rating || 0) * 5,
-            reason: `${recentOrders} recent orders, ${product.average_rating?.toFixed(1)}★ rating`
-          }
-        })
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit)
-
-      cacheService.set(cacheKey, trendingProducts, 180000) // Cache for 3 minutes - reduced to save space
+      cacheService.set(cacheKey, trendingProducts, 180000) // Cache for 3 minutes
       return trendingProducts
 
     } catch (error) {

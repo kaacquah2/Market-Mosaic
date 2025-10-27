@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { GoogleMap, LoadScript, Marker, InfoWindow } from "@react-google-maps/api"
 
 interface Location {
@@ -53,9 +53,9 @@ export default function OrderTracking({
     }
   }, [currentLocation, destinationAddress])
 
-  useState(() => {
+  useEffect(() => {
     calculateCenter()
-  })
+  }, [calculateCenter])
 
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 

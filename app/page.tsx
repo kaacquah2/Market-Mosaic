@@ -93,7 +93,7 @@ export default function HomePage() {
 
       // Get total users count
       const { count: userCount } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .select("*", { count: "exact", head: true })
 
       // Get orders data

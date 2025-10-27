@@ -39,8 +39,8 @@ export default async function SupportPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">Send us an email and we'll respond within 24 hours.</p>
-              <a href="mailto:support@marketmosaic.com" className="text-primary font-semibold hover:underline">
-                support@marketmosaic.com
+              <a href="mailto:kaacquah2004@gmail.com" className="text-primary font-semibold hover:underline">
+                kaacquah2004@gmail.com
               </a>
             </CardContent>
           </Card>
@@ -67,8 +67,8 @@ export default async function SupportPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Call us during business hours for immediate assistance.
               </p>
-              <a href="tel:+1234567890" className="text-primary font-semibold hover:underline">
-                +1 (234) 567-890
+              <a href="tel:+233534099456" className="text-primary font-semibold hover:underline">
+                +233 53 409 9456
               </a>
             </CardContent>
           </Card>

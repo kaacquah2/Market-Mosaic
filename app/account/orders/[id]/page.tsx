@@ -7,6 +7,9 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import OrderTracking from "@/components/order-tracking"
 import { ReturnRequest } from "@/components/return-system"
+import { OrderTimeline } from "@/components/order-timeline"
+import { CarrierTrackingLink } from "@/components/carrier-tracking-link"
+import { Package, Truck, MapPin } from "lucide-react"
 
 interface OrderItem {
   id: string
@@ -25,6 +28,11 @@ interface Order {
   status: string
   total: string
   tracking_number?: string
+  shipping_carrier?: string
+  estimated_delivery?: string
+  shipped_at?: string
+  delivered_at?: string
+  shipping_address?: any
   current_location?: { lat: number; lng: number }
   destination_address?: {
     address: string
@@ -39,6 +47,7 @@ interface Order {
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [order, setOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+  const [trackingHistory, setTrackingHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
@@ -124,6 +133,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         .eq("order_id", orderData.id)
 
       setOrderItems(orderItemsData || [])
+
+      // Fetch tracking history
+      const { data: trackingData } = await supabase
+        .from("order_tracking_history")
+        .select("*")
+        .eq("order_id", orderData.id)
+        .order("timestamp", { ascending: false })
+
+      setTrackingHistory(trackingData || [])
     } catch (error) {
       console.error("Error fetching order data:", error)
     } finally {
@@ -192,12 +210,69 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Status</p>
-              <span className="bg-primary/10 text-primary px-3 py-1 rounded text-xs font-semibold">{order.status}</span>
+              <span className="bg-primary/10 text-primary px-3 py-1 rounded text-xs font-semibold uppercase">
+                {order.status.replace(/_/g, " ")}
+              </span>
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-1">Total</p>
               <p className="text-2xl font-bold">${Number.parseFloat(order.total).toFixed(2)}</p>
             </div>
+          </div>
+        </div>
+
+        {/* Tracking Timeline */}
+        <div className="mb-12">
+          <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg p-8 border border-primary/10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-primary/10 p-3 rounded-full">
+                <Package className="h-6 w-6 text-primary" />
+              </div>
+              <h2 className="text-2xl font-serif font-bold">Order Tracking</h2>
+            </div>
+
+            {/* Carrier and Tracking Number */}
+            {order.tracking_number && (
+              <div className="mb-6 p-4 bg-background rounded-lg border">
+                <CarrierTrackingLink
+                  trackingNumber={order.tracking_number}
+                  carrier={order.shipping_carrier}
+                />
+              </div>
+            )}
+
+            {/* Shipping Address */}
+            {order.shipping_address && (
+              <div className="mb-6 p-4 bg-background rounded-lg border">
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium mb-2">Shipping Address</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.shipping_address.full_name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.shipping_address.address_line1}
+                      {order.shipping_address.address_line2 && `, ${order.shipping_address.address_line2}`}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{order.shipping_address.country}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Timeline */}
+            <OrderTimeline
+              orderStatus={order.status}
+              createdAt={order.created_at}
+              shippedAt={order.shipped_at}
+              deliveredAt={order.delivered_at}
+              estimatedDelivery={order.estimated_delivery}
+              trackingHistory={trackingHistory}
+            />
           </div>
         </div>
 
@@ -270,10 +345,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* Order Tracking */}
-        {(order.tracking_number || order.current_location || order.destination_address) && (
+        {/* Live Map Tracking (if available) */}
+        {(order.current_location || order.destination_address) && (
           <div className="mb-12">
-            <h2 className="text-2xl font-serif font-bold mb-6">Track Your Order</h2>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-primary/10 p-3 rounded-full">
+                <Truck className="h-6 w-6 text-primary" />
+              </div>
+              <h2 className="text-2xl font-serif font-bold">Live Location</h2>
+            </div>
             <OrderTracking
               currentLocation={order.current_location}
               destinationAddress={order.destination_address}

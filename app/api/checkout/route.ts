@@ -87,24 +87,39 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Stripe checkout session
-    const stripe = getStripe()
-    const session = await stripe.checkout.sessions.create({
-      line_items,
-      mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${request.nextUrl.origin}`}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${request.nextUrl.origin}`}/cart`,
-      customer_email: user.email,
-      shipping_address_collection: {
-        allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'CH', 'AT', 'SE', 'NO', 'DK', 'FI', 'PL', 'IE', 'PT', 'GR', 'CZ', 'HU', 'RO', 'BG', 'HR', 'SK', 'SI', 'LT', 'LV', 'EE', 'JP', 'CN', 'KR', 'IN', 'TH', 'SG', 'MY', 'PH', 'ID', 'VN', 'TW', 'HK', 'NZ', 'ZA', 'EG', 'KE', 'NG', 'GH', 'MA', 'TN', 'AE', 'SA', 'IL', 'TR', 'PK', 'BD', 'LK', 'NP', 'MM', 'KH', 'LA', 'BN', 'MX', 'BR', 'AR', 'CL', 'CO', 'PE', 'VE', 'EC', 'BO', 'PY', 'UY', 'CR', 'PA', 'GT', 'HN', 'NI', 'SV', 'DO', 'CU', 'JM', 'TT', 'GY', 'SR', 'RU', 'UA', 'BY', 'KZ', 'UZ', 'GE', 'AM', 'AZ', 'IQ', 'JO', 'LB', 'SY', 'YE', 'OM', 'KW', 'QA', 'BH', 'IR', 'AF', 'ET', 'TZ', 'UG', 'RW', 'BW', 'NA', 'ZM', 'ZW', 'MU', 'SC', 'MG', 'MZ', 'AO', 'CV', 'DZ', 'LY', 'SD', 'SS', 'ER', 'DJ', 'SO', 'KM', 'AD', 'MC', 'SM', 'VA', 'LI', 'MT', 'CY', 'LU', 'IS', 'MD', 'MK', 'ME', 'RS', 'BA', 'AL', 'XK', 'MN', 'BT', 'MV', 'TL', 'FJ', 'PG', 'SB', 'VU', 'NC', 'PF', 'WS', 'KI', 'TV', 'NR', 'TO', 'PW', 'FM', 'MH'],
-      },
-      metadata: {
-        user_id: user.id,
-      },
-    } as any)
+    let stripe
+    try {
+      stripe = getStripe()
+    } catch (error) {
+      console.error("Stripe initialization error:", error)
+      return NextResponse.json({ error: "Payment system not configured. Please contact support." }, { status: 500 })
+    }
+
+    let session
+    try {
+      session = await stripe.checkout.sessions.create({
+        line_items,
+        mode: "payment",
+        success_url: `${process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${request.nextUrl.origin}`}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${request.nextUrl.origin}`}/cart`,
+        customer_email: user.email,
+        shipping_address_collection: {
+          allowed_countries: ['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'CH', 'AT', 'SE', 'NO', 'DK', 'FI', 'PL', 'IE', 'PT', 'GR', 'CZ', 'HU', 'RO', 'BG', 'HR', 'SK', 'SI', 'LT', 'LV', 'EE', 'JP', 'CN', 'KR', 'IN', 'TH', 'SG', 'MY', 'PH', 'ID', 'VN', 'TW', 'HK', 'NZ', 'ZA', 'EG', 'KE', 'NG', 'GH', 'MA', 'TN', 'AE', 'SA', 'IL', 'TR', 'PK', 'BD', 'LK', 'NP', 'MM', 'KH', 'LA', 'BN', 'MX', 'BR', 'AR', 'CL', 'CO', 'PE', 'VE', 'EC', 'BO', 'PY', 'UY', 'CR', 'PA', 'GT', 'HN', 'NI', 'SV', 'DO', 'JM', 'TT', 'GY', 'SR', 'RU', 'UA', 'BY', 'KZ', 'UZ', 'GE', 'AM', 'AZ', 'IQ', 'JO', 'LB', 'YE', 'OM', 'KW', 'QA', 'BH', 'AF', 'ET', 'TZ', 'UG', 'RW', 'BW', 'NA', 'ZM', 'ZW', 'MU', 'SC', 'MG', 'MZ', 'AO', 'CV', 'DZ', 'LY', 'SD', 'SS', 'ER', 'DJ', 'SO', 'KM', 'AD', 'MC', 'SM', 'VA', 'LI', 'MT', 'CY', 'LU', 'IS', 'MD', 'MK', 'ME', 'RS', 'BA', 'AL', 'XK', 'MN', 'BT', 'MV', 'TL', 'FJ', 'PG', 'SB', 'VU', 'NC', 'PF', 'WS', 'KI', 'TV', 'NR', 'TO'],
+        },
+        metadata: {
+          user_id: user.id,
+        },
+      } as any)
+    } catch (error: any) {
+      console.error("Stripe session creation error:", error)
+      return NextResponse.json({ 
+        error: `Stripe error: ${error.message || 'Unknown error'}` 
+      }, { status: 500 })
+    }
 
     // Create order in database
     const total = subtotal + tax + shippingCost
-    const { data: order } = await supabase
+    const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
         user_id: user.id,
@@ -116,8 +131,8 @@ export async function POST(request: NextRequest) {
           address_line1: shippingAddress.addressLine1,
           address_line2: shippingAddress.addressLine2 || "",
           city: shippingAddress.city,
-          state: shippingAddress.state,
-          postal_code: shippingAddress.postalCode,
+          state: shippingAddress.state || "",
+          postal_code: shippingAddress.postalCode || "",
           country: shippingAddress.country,
           phone: shippingAddress.phone,
         },
@@ -128,9 +143,16 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
+    if (orderError) {
+      console.error("Database order creation error:", orderError)
+      return NextResponse.json({ 
+        error: `Database error: ${orderError.message}` 
+      }, { status: 500 })
+    }
+
     if (order) {
       // Create order items
-      await supabase.from("order_items").insert(
+      const { error: itemsError } = await supabase.from("order_items").insert(
         cartItems.map((item: any) => ({
           order_id: order.id,
           product_id: item.id,
@@ -138,11 +160,19 @@ export async function POST(request: NextRequest) {
           price: item.price,
         })),
       )
+
+      if (itemsError) {
+        console.error("Database order items creation error:", itemsError)
+        // Don't fail the checkout if order items fail - order is already created
+        // Just log the error
+      }
     }
 
     return NextResponse.json({ url: session.url })
-  } catch (error) {
-    console.error("Checkout error:", error)
-    return NextResponse.json({ error: "Checkout failed" }, { status: 500 })
+  } catch (error: any) {
+    console.error("Unexpected checkout error:", error)
+    return NextResponse.json({ 
+      error: `Checkout failed: ${error.message || 'Unknown error'}` 
+    }, { status: 500 })
   }
 }

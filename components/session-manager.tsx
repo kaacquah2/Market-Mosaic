@@ -9,33 +9,95 @@ import { createClient } from "@/lib/supabase/client"
  */
 export function SessionManager() {
   useEffect(() => {
+    // DISABLED: This component was causing issues with session persistence
+    // It was logging users out when navigating between pages
+    // If you need session clearing, implement it differently
+    
+    console.log('⚠️ SessionManager is currently DISABLED to fix login issues')
+    
+    return () => {
+      // No cleanup needed
+    }
+    
+    /* ORIGINAL CODE - DISABLED FOR NOW
+    
+    // Mark when OAuth flow is in progress
+    let oauthInProgress = false
+    
+    // Listen for OAuth flow starting (when user clicks OAuth button)
+    const handleOAuthStart = () => {
+      oauthInProgress = true
+      sessionStorage.setItem('oauth-in-progress', 'true')
+      console.log('🔐 OAuth flow started, session clearing disabled')
+    }
+    
+    // Listen for OAuth flow completion
+    const handleOAuthComplete = () => {
+      oauthInProgress = false
+      sessionStorage.removeItem('oauth-in-progress')
+      console.log('✅ OAuth flow completed, session clearing re-enabled')
+    }
+    
+    // Check if OAuth was in progress from previous page
+    if (sessionStorage.getItem('oauth-in-progress') === 'true') {
+      oauthInProgress = true
+    }
+    
+    // Listen for successful auth to clear the OAuth flag
+    const supabaseForListener = createClient()
+    const { data: { subscription } } = supabaseForListener.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        handleOAuthComplete()
+      }
+    })
+    
     // Clear session when page is about to unload (closing tab, navigating away, etc.)
     const handleBeforeUnload = async () => {
       try {
-        // Don't run on OAuth callback URLs or auth pages
-        const isAuthPage = window.location.pathname.includes('/auth/')
+        // Don't run on any auth pages (login, signup, callback, etc.)
+        const isAuthPage = window.location.pathname.startsWith('/auth/')
         if (isAuthPage) {
-          return // Let OAuth flow complete
+          console.log('📍 On auth page, skipping session clear')
+          return // Let auth flow complete
+        }
+        
+        // Don't run if OAuth is in progress
+        if (oauthInProgress || sessionStorage.getItem('oauth-in-progress') === 'true') {
+          console.log('🔐 OAuth in progress, skipping session clear')
+          return
         }
 
+        console.log('🧹 Clearing session on page unload')
         const supabase = createClient()
         
         // Clear all Supabase-related localStorage BUT keep PKCE verifier for OAuth
         const keys = Object.keys(localStorage)
         keys.forEach(key => {
           if (key.includes('supabase') || key.includes('sb-')) {
-            // Don't clear PKCE verifier during OAuth flow (it's needed for auth)
-            if (!key.includes('code_verifier') && !key.includes('code_challenge') && !key.includes('pkce')) {
+            // Preserve PKCE verifier and auth tokens
+            // PKCE keys: code-verifier, code_verifier, pkce-code-verifier
+            const shouldPreserve = 
+              key.includes('code-verifier') || 
+              key.includes('code_verifier') || 
+              key.includes('code-challenge') || 
+              key.includes('code_challenge') ||
+              key.includes('pkce') ||
+              key.includes('-auth-token') ||
+              key.endsWith('-auth-token-code-verifier')
+            
+            if (!shouldPreserve) {
               localStorage.removeItem(key)
             }
           }
         })
         
-        // Clear all Supabase-related sessionStorage
+        // Don't clear sessionStorage with OAuth flag
         const sessionKeys = Object.keys(sessionStorage)
         sessionKeys.forEach(key => {
           if (key.includes('supabase') || key.includes('sb-')) {
-            sessionStorage.removeItem(key)
+            if (key !== 'oauth-in-progress') {
+              sessionStorage.removeItem(key)
+            }
           }
         })
         
@@ -47,23 +109,9 @@ export function SessionManager() {
       }
     }
 
-    // Clear session when tab becomes hidden (user switches tabs or minimizes)
-    const handleVisibilityChange = async () => {
-      // Don't clear on visibility change - this interferes with OAuth redirects
-      // Only clear on actual page unload (browser close, navigate away)
-    }
-
-    // Listen for page unload
-    window.addEventListener('beforeunload', handleBeforeUnload)
+    // ... rest of disabled code
     
-    // Listen for visibility changes (tab switching, minimizing)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    // Cleanup listeners on component unmount
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
+    */
   }, [])
 
   return null // This component doesn't render anything

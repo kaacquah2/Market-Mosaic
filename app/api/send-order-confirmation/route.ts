@@ -47,6 +47,9 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Use verified domain from env var, or fall back to Resend's test domain
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Market Mosaic <onboarding@resend.dev>'
+    
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -54,7 +57,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Market Mosaic <noreply@marketmosaic.com>',
+        from: fromEmail,
         to: [userEmail],
         subject: `Order Confirmation #${order.id.slice(-8)}`,
         html: emailHtml,
@@ -182,7 +185,7 @@ function createOrderConfirmationEmail(order: any, userName: string): string {
       </div>
 
       <div class="footer">
-        <p>Questions about your order? Contact us at support@marketmosaic.com</p>
+        <p>Questions about your order? Please reply to this email or contact support.</p>
         <p>© 2024 Market Mosaic. All rights reserved.</p>
       </div>
     </body>

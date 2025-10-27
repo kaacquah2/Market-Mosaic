@@ -23,19 +23,41 @@ export default async function AccountPage() {
     redirect("/auth/login")
   }
 
-  // Fetch user profile
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .single()
+  // Fetch user profile with error handling
+  let profile = null
+  try {
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle()
+    
+    if (error && error.code !== 'PGRST116') {
+      console.error("Error fetching profile:", error)
+    } else {
+      profile = data
+    }
+  } catch (error) {
+    console.error("Profile fetch error:", error)
+  }
 
-  // Fetch user's orders
-  const { data: orders } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+  // Fetch user's orders with error handling
+  let orders: any[] = []
+  try {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+    
+    if (error) {
+      console.error("Error fetching orders:", error)
+    } else {
+      orders = data || []
+    }
+  } catch (error) {
+    console.error("Orders fetch error:", error)
+  }
 
   return (
     <div className="min-h-screen bg-background">

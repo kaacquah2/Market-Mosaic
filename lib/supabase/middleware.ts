@@ -11,6 +11,12 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/api/auth")
   )
 
+  // CRITICAL: Allow auth callback through immediately without any processing
+  // The client-side will handle the OAuth flow
+  if (request.nextUrl.pathname === "/auth/callback") {
+    return NextResponse.next()
+  }
+
   // Allow public pages through without auth check to speed up loading
   if (isPublicPath && !request.nextUrl.pathname.startsWith("/account") && !request.nextUrl.pathname.startsWith("/admin")) {
     return NextResponse.next()
@@ -25,8 +31,9 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        persistSession: false, // Don't persist sessions
-        autoRefreshToken: false, // Don't auto-refresh tokens
+        persistSession: false, // Don't persist sessions on server
+        autoRefreshToken: false, // Don't auto-refresh tokens on server
+        detectSessionInUrl: false, // Don't detect sessions in URL on server (client handles OAuth)
       },
       cookies: {
         getAll() {
@@ -49,6 +56,7 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
+  // For protected routes, verify authentication
   const {
     data: { user },
   } = await supabase.auth.getUser()

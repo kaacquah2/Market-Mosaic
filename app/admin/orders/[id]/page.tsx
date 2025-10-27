@@ -5,10 +5,8 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import OrderTracking from "@/components/order-tracking"
-import { toast } from "sonner"
+import { OrderTrackingManager } from "@/components/admin/order-tracking-manager"
 
 interface OrderItem {
   id: string
@@ -27,6 +25,8 @@ interface Order {
   status: string
   total: string
   tracking_number?: string
+  shipping_carrier?: string
+  estimated_delivery?: string
   current_location?: { lat: number; lng: number }
   destination_address?: {
     address: string
@@ -44,12 +44,6 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
-  
-  // Form state
-  const [trackingNumber, setTrackingNumber] = useState("")
-  const [currentLat, setCurrentLat] = useState("")
-  const [currentLng, setCurrentLng] = useState("")
-  const [status, setStatus] = useState("")
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget as HTMLImageElement;
@@ -111,14 +105,6 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
       }
 
       setOrder(processedOrder)
-      
-      // Set form values
-      setTrackingNumber(orderData.tracking_number || "")
-      setStatus(orderData.status || "pending")
-      if (orderData.current_location) {
-        setCurrentLat(orderData.current_location.lat.toString())
-        setCurrentLng(orderData.current_location.lng.toString())
-      }
 
       // Fetch order items
       const { data: orderItemsData } = await supabase
@@ -134,62 +120,9 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
     }
   }
 
-  const handleUpdateTracking = async () => {
-    if (!order) return
-
-    try {
-      const supabase = createClient()
-      
-      const updateData: any = {
-        status: status,
-        updated_at: new Date().toISOString(),
-      }
-
-      if (trackingNumber) {
-        updateData.tracking_number = trackingNumber
-      }
-
-      if (currentLat && currentLng) {
-        updateData.current_location = {
-          lat: parseFloat(currentLat),
-          lng: parseFloat(currentLng)
-        }
-      }
-
-      const { error } = await supabase
-        .from("orders")
-        .update(updateData)
-        .eq("id", order.id)
-
-      if (error) throw error
-
-      toast.success("Order tracking updated successfully")
-      
-      // Refresh order data
-      const { data: orderData } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("id", order.id)
-        .single()
-
-      if (orderData) {
-        const processedOrder: Order = {
-          ...orderData,
-          current_location: orderData.current_location || undefined,
-          destination_address: orderData.destination_address || undefined,
-        }
-        setOrder(processedOrder)
-        setTrackingNumber(orderData.tracking_number || "")
-        setStatus(orderData.status || "pending")
-        if (orderData.current_location) {
-          setCurrentLat(orderData.current_location.lat.toString())
-          setCurrentLng(orderData.current_location.lng.toString())
-        }
-      }
-    } catch (error) {
-      console.error("Error updating tracking:", error)
-      toast.error("Failed to update tracking")
-    }
+  const handleTrackingUpdate = () => {
+    // Refresh order data after tracking update
+    fetchData()
   }
 
   if (loading) {
@@ -263,68 +196,15 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         </div>
 
         {/* Tracking Update Form */}
-        <div className="bg-card border border-border rounded-lg p-6 mb-12">
-          <h2 className="text-2xl font-serif font-bold mb-6">Update Tracking Information</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-              >
-                <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="shipped">Shipped</option>
-                <option value="in_transit">In Transit</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-            </div>
-
-            <div>
-              <Label htmlFor="tracking">Tracking Number</Label>
-              <Input
-                id="tracking"
-                value={trackingNumber}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-                placeholder="Enter tracking number"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="lat">Current Latitude</Label>
-              <Input
-                id="lat"
-                type="number"
-                step="any"
-                value={currentLat}
-                onChange={(e) => setCurrentLat(e.target.value)}
-                placeholder="37.7749"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="lng">Current Longitude</Label>
-              <Input
-                id="lng"
-                type="number"
-                step="any"
-                value={currentLng}
-                onChange={(e) => setCurrentLng(e.target.value)}
-                placeholder="-122.4194"
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <Button onClick={handleUpdateTracking} className="bg-primary hover:bg-primary/90">
-            Update Tracking
-          </Button>
+        <div className="mb-12">
+          <OrderTrackingManager
+            orderId={order.id}
+            currentStatus={order.status}
+            currentTrackingNumber={order.tracking_number}
+            currentCarrier={order.shipping_carrier}
+            currentEstimatedDelivery={order.estimated_delivery}
+            onUpdate={handleTrackingUpdate}
+          />
         </div>
 
         {/* Order Tracking Map */}

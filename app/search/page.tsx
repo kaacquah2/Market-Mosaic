@@ -80,10 +80,10 @@ function SearchContent() {
   const [cartItems, setCartItems] = useState<Set<string>>(new Set())
   const [wishlistItems, setWishlistItems] = useState<Set<string>>(new Set())
 
+  // Fetch cart and wishlist on component mount
   useEffect(() => {
-    fetchProducts()
     fetchCartAndWishlist()
-  }, [filters])
+  }, [])
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -93,10 +93,15 @@ function SearchContent() {
       let query = supabase
         .from("products")
         .select("*")
+        .eq("is_active", true)
 
       // Apply search query
-      if (filters.query) {
-        query = query.or(`name.ilike.%${filters.query}%,description.ilike.%${filters.query}%`)
+      if (filters.query && filters.query.trim()) {
+        // Use case-insensitive search on name and description fields
+        const searchQuery = filters.query.trim()
+        query = query.or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
+        
+        console.log("Searching for:", searchQuery)
       }
 
       // Apply category filter
@@ -112,9 +117,9 @@ function SearchContent() {
         query = query.lte("price", filters.maxPrice)
       }
 
-      // Apply stock filter
+      // Apply stock filter (check if product has stock)
       if (filters.inStock) {
-        query = query.eq("in_stock", true)
+        query = query.gt("stock_quantity", 0)
       }
 
       // Apply brand filter
@@ -181,6 +186,20 @@ function SearchContent() {
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  // Debounce search to avoid too many queries
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchProducts()
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer)
+  }, [filters.query, filters.category, filters.minPrice, filters.maxPrice, filters.inStock, filters.sortBy, filters.brands])
+
   const handleBrandToggle = (brand: string) => {
     setFilters(prev => ({
       ...prev,
@@ -246,9 +265,22 @@ function SearchContent() {
                 placeholder="Search products..."
                 value={filters.query}
                 onChange={(e) => handleFilterChange("query", e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    fetchProducts()
+                  }
+                }}
                 className="pl-10"
               />
             </div>
+            
+            <Button
+              onClick={() => fetchProducts()}
+              className="flex items-center gap-2"
+            >
+              <Search className="h-4 w-4" />
+              Search
+            </Button>
             
             <Button
               variant="outline"
