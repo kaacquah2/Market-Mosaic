@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Navigation } from "@/components/navigation"
 import { Heart, Star, ShoppingCart, Minus, Plus } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { cartService } from "@/lib/cart-service"
 import { wishlistService } from "@/lib/wishlist-service"
@@ -34,6 +35,7 @@ interface Product {
 export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { toast } = useToast()
   const [product, setProduct] = useState<Product | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
@@ -91,15 +93,34 @@ export default function ProductDetailPage() {
 
     setIsAdding(true)
     try {
-      const success = await cartService.addToCart(product.id, quantity)
-      if (success) {
+      const result = await cartService.addToCart(product.id, quantity)
+      if (result.success) {
+        toast({
+          title: "Item added to cart",
+          description: `${product.name} has been added to your cart.`,
+        })
         router.push("/cart")
+      } else if (result.requiresLogin) {
+        toast({
+          title: "Please log in",
+          description: "You need to log in to add items to your cart.",
+          variant: "destructive",
+        })
+        router.push("/auth/login")
       } else {
-        alert("Failed to add item to cart. Please try again.")
+        toast({
+          title: "Failed to add item",
+          description: result.error || "Please try again.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error adding to cart:", error)
-      alert("An error occurred. Please try again.")
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsAdding(false)
     }

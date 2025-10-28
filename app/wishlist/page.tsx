@@ -1,15 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Navigation } from "@/components/navigation"
 import { Heart, ShoppingCart, Star } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { cartService } from "@/lib/cart-service"
 import { wishlistService, WishlistItem } from "@/lib/wishlist-service"
 
 export default function WishlistPage() {
+  const router = useRouter()
+  const { toast } = useToast()
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
@@ -57,16 +61,33 @@ export default function WishlistPage() {
 
   const addToCart = async (product: WishlistItem['products']) => {
     try {
-      const success = await cartService.addToCart(product.id, 1)
-      if (success) {
-        // You could add a toast notification here
-        console.log("Added to cart successfully")
+      const result = await cartService.addToCart(product.id, 1)
+      if (result.success) {
+        toast({
+          title: "Item added to cart",
+          description: `${product.name} has been added to your cart.`,
+        })
+      } else if (result.requiresLogin) {
+        toast({
+          title: "Please log in",
+          description: "You need to log in to add items to your cart.",
+          variant: "destructive",
+        })
+        router.push("/auth/login")
       } else {
-        alert("Failed to add item to cart. Please try again.")
+        toast({
+          title: "Failed to add item",
+          description: result.error || "Please try again.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error adding to cart:", error)
-      alert("An error occurred. Please try again.")
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 

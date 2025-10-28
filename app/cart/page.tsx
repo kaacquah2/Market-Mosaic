@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Navigation } from "@/components/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { cartService, CartItem } from "@/lib/cart-service"
 import { AppConfig } from "@/lib/config"
 
@@ -15,8 +16,20 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetchCartItems()
+    checkAuthAndFetchCart()
   }, [])
+
+  const checkAuthAndFetchCart = async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      router.push("/auth/login")
+      return
+    }
+    
+    fetchCartItems()
+  }
 
   const fetchCartItems = async () => {
     try {

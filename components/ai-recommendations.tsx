@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Heart, Star, Sparkles, TrendingUp, Eye } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import { aiRecommendationService, ProductRecommendation } from "@/lib/ai-recommendation-service"
 import { createClient } from "@/lib/supabase/client"
 import { cartService } from "@/lib/cart-service"
@@ -27,6 +29,8 @@ export function RecommendationSection({
   title, 
   limit = 8 
 }: RecommendationSectionProps) {
+  const router = useRouter()
+  const { toast } = useToast()
   const [products, setProducts] = useState<ProductRecommendation[]>([])
   const [loading, setLoading] = useState(true)
   const [cartItems, setCartItems] = useState<Set<string>>(new Set())
@@ -81,10 +85,34 @@ export function RecommendationSection({
 
   const addToCart = async (productId: string) => {
     try {
-      await cartService.addToCart(productId, 1)
-      setCartItems(prev => new Set([...prev, productId]))
+      const result = await cartService.addToCart(productId, 1)
+      if (result.success) {
+        setCartItems(prev => new Set([...prev, productId]))
+        toast({
+          title: "Item added to cart",
+          description: "The item has been added to your cart.",
+        })
+      } else if (result.requiresLogin) {
+        toast({
+          title: "Please log in",
+          description: "You need to log in to add items to your cart.",
+          variant: "destructive",
+        })
+        router.push("/auth/login")
+      } else {
+        toast({
+          title: "Failed to add item",
+          description: result.error || "Please try again.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error('Error adding to cart:', error)
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 

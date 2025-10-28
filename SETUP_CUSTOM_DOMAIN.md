@@ -95,3 +95,4 @@ After setup, test the email functionality:
 **Need help?** Check out:
 - Vercel Docs: https://vercel.com/docs/domains
 - Resend Docs: https://resend.com/docs
+

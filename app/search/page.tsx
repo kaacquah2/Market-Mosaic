@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Navigation } from "@/components/navigation"
 import { Search, Filter, X, Star, Heart } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { cartService } from "@/lib/cart-service"
 import { wishlistService } from "@/lib/wishlist-service"
@@ -64,6 +65,8 @@ const CATEGORIES = [
 
 function SearchContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const { toast } = useToast()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -223,10 +226,34 @@ function SearchContent() {
 
   const addToCart = async (productId: string) => {
     try {
-      await cartService.addToCart(productId, 1)
-      setCartItems(prev => new Set([...prev, productId]))
+      const result = await cartService.addToCart(productId, 1)
+      if (result.success) {
+        setCartItems(prev => new Set([...prev, productId]))
+        toast({
+          title: "Item added to cart",
+          description: "The item has been added to your cart.",
+        })
+      } else if (result.requiresLogin) {
+        toast({
+          title: "Please log in",
+          description: "You need to log in to add items to your cart.",
+          variant: "destructive",
+        })
+        router.push("/auth/login")
+      } else {
+        toast({
+          title: "Failed to add item",
+          description: result.error || "Please try again.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("Error adding to cart:", error)
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 

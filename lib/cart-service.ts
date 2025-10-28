@@ -66,11 +66,11 @@ export class CartService {
     })) as CartItem[]
   }
 
-  async addToCart(productId: string, quantity: number = 1): Promise<boolean> {
+  async addToCart(productId: string, quantity: number = 1): Promise<{ success: boolean; requiresLogin?: boolean; error?: string }> {
     const { data: { user } } = await this.supabase.auth.getUser()
     
     if (!user) {
-      return false
+      return { success: false, requiresLogin: true, error: "Please log in to add items to cart" }
     }
 
     // Check if item already exists in cart
@@ -93,7 +93,7 @@ export class CartService {
 
       if (error) {
         console.error("Error updating cart item:", error)
-        return false
+        return { success: false, error: "Failed to update cart item" }
       }
     } else {
       // Add new item to cart
@@ -107,11 +107,11 @@ export class CartService {
 
       if (error) {
         console.error("Error adding to cart:", error)
-        return false
+        return { success: false, error: "Failed to add item to cart" }
       }
     }
 
-    return true
+    return { success: true }
   }
 
   async updateQuantity(cartItemId: string, quantity: number): Promise<boolean> {
