@@ -150,12 +150,12 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <Link href="/products" className="text-sm text-muted-foreground hover:text-foreground mb-8 inline-block">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <Link href="/products" className="text-sm text-muted-foreground hover:text-foreground mb-4 sm:mb-8 inline-block">
           ← Back to Products
         </Link>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12">
           {/* Product Image */}
           <div className="bg-muted rounded-lg overflow-hidden aspect-square">
             <img
@@ -176,10 +176,10 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              <h1 className="text-4xl font-bold mb-4">{product.name}</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">{product.name}</h1>
 
               {/* Rating */}
-              {product.average_rating && product.average_rating > 0 && (
+              {product.average_rating && product.average_rating > 0 && product.review_count && product.review_count > 0 && (
                 <div className="flex items-center gap-2 mb-4">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
@@ -194,7 +194,7 @@ export default function ProductDetailPage() {
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {product.average_rating.toFixed(1)} ({product.review_count || 0} reviews)
+                    {product.average_rating.toFixed(1)} ({product.review_count} reviews)
                   </span>
                 </div>
               )}
@@ -226,13 +226,22 @@ export default function ProductDetailPage() {
 
             {/* Price and Actions */}
             <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <span className="text-4xl font-bold text-primary">${product.price.toFixed(2)}</span>
+              <div className="flex flex-col gap-2">
+                <span className="text-3xl sm:text-4xl font-bold text-primary">${product.price.toFixed(2)}</span>
                 {product.stock_quantity === 0 && (
-                  <span className="text-red-500 font-semibold">Out of Stock</span>
+                  <span className="inline-flex items-center w-fit px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                    Out of Stock
+                  </span>
                 )}
-                {product.stock_quantity && product.stock_quantity > 0 && (
-                  <span className="text-green-500 font-semibold">{product.stock_quantity} in stock</span>
+                {product.stock_quantity && product.stock_quantity > 0 && product.stock_quantity < 10 && (
+                  <span className="inline-flex items-center w-fit px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                    ⚠️ Only {product.stock_quantity} left in stock!
+                  </span>
+                )}
+                {product.stock_quantity && product.stock_quantity >= 10 && (
+                  <span className="inline-flex items-center w-fit px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    ✓ In Stock ({product.stock_quantity} available)
+                  </span>
                 )}
               </div>
 
@@ -251,20 +260,30 @@ export default function ProductDetailPage() {
                   <Input
                     type="number"
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Number.parseInt(e.target.value) || 1))}
+                    onChange={(e) => {
+                      const val = Number.parseInt(e.target.value) || 1
+                      const maxStock = product.stock_quantity || 999
+                      setQuantity(Math.min(Math.max(1, val), maxStock))
+                    }}
                     className="w-16 text-center border-0"
                     min="1"
                     max={product.stock_quantity || 99}
+                    disabled={product.stock_quantity === 0}
                   />
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setQuantity(quantity + 1)}
-                    disabled={product.stock_quantity ? quantity >= product.stock_quantity : false}
+                    onClick={() => setQuantity(Math.min(quantity + 1, product.stock_quantity || 999))}
+                    disabled={product.stock_quantity === 0 || quantity >= (product.stock_quantity || 999)}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
+                {product.stock_quantity && quantity >= product.stock_quantity && (
+                  <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
+                    Maximum available quantity selected
+                  </span>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -275,7 +294,7 @@ export default function ProductDetailPage() {
                   className="flex-1"
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  {isAdding ? "Adding..." : "Add to Cart"}
+                  {product.stock_quantity === 0 ? "Out of Stock" : isAdding ? "Adding..." : "Add to Cart"}
                 </Button>
                 <Button
                   variant="outline"

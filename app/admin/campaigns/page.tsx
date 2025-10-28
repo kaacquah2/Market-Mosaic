@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { AdminHeader } from "@/components/admin/admin-header"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -230,23 +232,34 @@ export default function CampaignsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading campaigns...</p>
+      <div className="flex min-h-screen bg-background">
+        <AdminSidebar />
+        <div className="flex-1 ml-64">
+          <AdminHeader userEmail={user?.email} />
+          <main className="p-6">
+            <p className="text-muted-foreground">Loading campaigns...</p>
+          </main>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Notification Campaigns</h1>
-            <p className="text-muted-foreground mt-2">
-              Create and manage promotional campaigns and notifications
-            </p>
-          </div>
+    <div className="flex min-h-screen bg-background">
+      <AdminSidebar />
+      
+      <div className="flex-1 ml-64">
+        <AdminHeader userEmail={user?.email} />
+        
+        <main className="p-6 space-y-6">
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Notification Campaigns</h1>
+              <p className="text-muted-foreground">
+                Create and manage promotional campaigns and notifications
+              </p>
+            </div>
           <div className="flex gap-3">
             <Button onClick={createBlackFridayCampaign} variant="outline">
               <Target className="h-4 w-4 mr-2" />
@@ -360,11 +373,11 @@ export default function CampaignsPage() {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
-        </div>
 
-        {/* Campaigns Grid */}
-        <div className="grid gap-6">
+          {/* Campaigns Grid */}
+          <div className="grid gap-6">
           {campaigns.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
@@ -447,7 +460,8 @@ export default function CampaignsPage() {
               </Card>
             ))
           )}
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   )

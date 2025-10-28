@@ -165,10 +165,10 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-5xl font-bold mb-4">
+        <div className="mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
             All <span className="text-primary">Products</span>
           </h1>
           <p className="text-muted-foreground text-lg">
@@ -177,7 +177,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Search and Filters */}
-        <div className="mb-12 space-y-6">
+        <div className="mb-8 sm:mb-12 space-y-4 sm:space-y-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Input
@@ -197,9 +197,9 @@ export default function ProductsPage() {
             </Link>
           </div>
 
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
             {/* Category Filter */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-semibold">Category:</span>
               <Button
                 variant={selectedCategory === null ? "default" : "outline"}
@@ -221,8 +221,8 @@ export default function ProductsPage() {
             </div>
 
             {/* Price Range */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-semibold">Price Range:</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+              <span className="text-sm font-semibold whitespace-nowrap">Price Range:</span>
               <input
                 type="range"
                 min="0"
@@ -279,11 +279,11 @@ export default function ProductsPage() {
                   <p className="text-muted-foreground text-xs uppercase tracking-wide">{product.category}</p>
                   
                   {/* Rating */}
-                  {product.average_rating && product.average_rating > 0 && (
+                  {product.average_rating && product.average_rating > 0 && product.review_count && product.review_count > 0 && (
                     <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                       <span className="text-xs text-muted-foreground">
-                        {product.average_rating.toFixed(1)} ({product.review_count || 0})
+                        {product.average_rating.toFixed(1)} ({product.review_count})
                       </span>
                     </div>
                   )}

@@ -9,6 +9,7 @@ import OrderTracking from "@/components/order-tracking"
 import { ReturnRequest } from "@/components/return-system"
 import { OrderTimeline } from "@/components/order-timeline"
 import { CarrierTrackingLink } from "@/components/carrier-tracking-link"
+import { Navigation } from "@/components/navigation"
 import { Package, Truck, MapPin } from "lucide-react"
 
 interface OrderItem {
@@ -51,6 +52,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
+  const [autoRefresh, setAutoRefresh] = useState(true)
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget as HTMLImageElement;
@@ -59,9 +61,47 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   }
 
+  const fetchLiveTracking = async () => {
+    if (!order?.id) return
+    
+    try {
+      const { id } = await params
+      const response = await fetch(`/api/tracking/live?orderId=${id}`)
+      const trackingData = await response.json()
+      
+      if (trackingData && trackingData.status) {
+        // Update local state with new tracking info
+        setOrder(prev => prev ? { ...prev, status: trackingData.status } : null)
+        
+        // Fetch updated tracking history
+        const supabase = createClient()
+        const { data } = await supabase
+          .from("order_tracking_history")
+          .select("*")
+          .eq("order_id", id)
+          .order("timestamp", { ascending: false })
+        
+        if (data) {
+          setTrackingHistory(data)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching live tracking:', error)
+    }
+  }
+
   useEffect(() => {
     fetchData()
-  }, [])
+    
+    // Auto-refresh tracking every 5 minutes if order is in transit
+    if (autoRefresh && order?.status === 'in_transit') {
+      const interval = setInterval(() => {
+        fetchLiveTracking()
+      }, 5 * 60 * 1000) // 5 minutes
+      
+      return () => clearInterval(interval)
+    }
+  }, [autoRefresh, order?.status])
 
   const fetchData = async () => {
     try {
@@ -172,34 +212,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-serif font-bold">
-            Market Mosaic
-          </Link>
-          <div className="flex items-center gap-6">
-            <Link href="/products" className="text-sm hover:text-muted-foreground transition-colors">
-              Shop
-            </Link>
-            <Link href="/cart" className="text-sm hover:text-muted-foreground transition-colors">
-              Cart
-            </Link>
-            <Link href="/account" className="text-sm hover:text-muted-foreground transition-colors">
-              Account
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <Link href="/account" className="text-sm text-muted-foreground hover:text-foreground mb-8 inline-block">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <Link href="/account" className="text-sm text-muted-foreground hover:text-foreground mb-4 sm:mb-8 inline-block">
           ← Back to Account
         </Link>
 
-        <div className="mb-12">
-          <h1 className="text-4xl font-serif font-bold mb-4">Order Details</h1>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="mb-8 sm:mb-12">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold mb-4">Order Details</h1>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Order ID</p>
               <p className="font-mono text-sm font-semibold">{order.id.slice(0, 8)}...</p>
@@ -222,22 +244,39 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Tracking Timeline */}
-        <div className="mb-12">
-          <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg p-8 border border-primary/10">
+        <div className="mb-8 sm:mb-12">
+          <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg p-4 sm:p-8 border border-primary/10">
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-primary/10 p-3 rounded-full">
                 <Package className="h-6 w-6 text-primary" />
               </div>
-              <h2 className="text-2xl font-serif font-bold">Order Tracking</h2>
+              <h2 className="text-xl sm:text-2xl font-serif font-bold">Order Tracking</h2>
             </div>
 
             {/* Carrier and Tracking Number */}
             {order.tracking_number && (
-              <div className="mb-6 p-4 bg-background rounded-lg border">
+              <div className="mb-6 p-4 bg-background rounded-lg border border-primary/20">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-primary" />
+                  Shipment Tracking
+                </h3>
                 <CarrierTrackingLink
                   trackingNumber={order.tracking_number}
                   carrier={order.shipping_carrier}
                 />
+                <p className="text-xs text-muted-foreground mt-3 italic">
+                  Click the button above to track your package on the carrier's website (FedEx, DHL, UPS, USPS, etc.)
+                </p>
+                
+                {/* Live Tracking Status */}
+                {autoRefresh && order.status === 'in_transit' && (
+                  <div className="mt-3 flex items-center gap-2 text-xs">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span className="text-green-600 dark:text-green-400 font-semibold">
+                      Live tracking enabled - Updates automatically every 5 minutes
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -277,8 +316,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Order Items */}
-        <div className="bg-muted rounded-lg p-6 mb-12">
-          <h2 className="text-2xl font-serif font-bold mb-6">Items</h2>
+        <div className="bg-muted rounded-lg p-4 sm:p-6 mb-8 sm:mb-12">
+          <h2 className="text-xl sm:text-2xl font-serif font-bold mb-4 sm:mb-6">Items</h2>
 
           {orderItems && orderItems.length > 0 ? (
             <div className="space-y-6">
@@ -321,8 +360,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Order Summary */}
-        <div className="bg-muted rounded-lg p-6 mb-12">
-          <h2 className="text-2xl font-serif font-bold mb-6">Order Summary</h2>
+        <div className="bg-muted rounded-lg p-4 sm:p-6 mb-8 sm:mb-12">
+          <h2 className="text-xl sm:text-2xl font-serif font-bold mb-4 sm:mb-6">Order Summary</h2>
 
           <div className="space-y-4">
             <div className="flex justify-between text-sm">

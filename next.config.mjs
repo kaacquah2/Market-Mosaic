@@ -11,6 +11,8 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
+  // Force dynamic rendering for all routes - no static generation
+  output: 'standalone',
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

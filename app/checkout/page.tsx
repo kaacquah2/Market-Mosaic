@@ -171,14 +171,14 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold mb-12">Checkout</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-8 sm:mb-12">Checkout</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12">
           {/* Order Review */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-6 border border-primary/20">
-              <h2 className="text-xl font-bold mb-4">Order Review</h2>
+            <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-4 sm:p-6 border border-primary/20">
+              <h2 className="text-lg sm:text-xl font-bold mb-4">Order Review</h2>
 
               <div className="space-y-4">
                 {cartItems.map((item) => (
@@ -208,7 +208,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-6 space-y-4 sticky top-20 border border-primary/20">
+            <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-4 sm:p-6 space-y-4 sticky top-16 sm:top-20 border border-primary/20">
               <h2 className="text-xl font-bold">Order Total</h2>
 
               <div className="space-y-3 border-t border-border pt-4">

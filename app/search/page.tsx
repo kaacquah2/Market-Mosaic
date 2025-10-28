@@ -447,11 +447,11 @@ function SearchContent() {
                           <h3 className="font-semibold line-clamp-2">{product.name}</h3>
                           <p className="text-2xl font-bold text-primary">${product.price.toFixed(2)}</p>
                           
-                          {product.average_rating && (
+                          {product.average_rating && product.average_rating > 0 && product.review_count && product.review_count > 0 && (
                             <div className="flex items-center space-x-1">
                               <Star className="h-4 w-4 text-yellow-400 fill-current" />
                               <span className="text-sm text-muted-foreground">
-                                {product.average_rating.toFixed(1)} ({product.review_count || 0})
+                                {product.average_rating.toFixed(1)} ({product.review_count})
                               </span>
                             </div>
                           )}

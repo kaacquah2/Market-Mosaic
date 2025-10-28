@@ -12,6 +12,7 @@ export interface ProductRecommendation {
   score: number
   reason: string
   average_rating?: number
+  review_count?: number
   in_stock: boolean
 }
 
@@ -57,10 +58,12 @@ export class AIRecommendationService {
         // Get products for these order items
         const productIds = Array.from(new Set(orderItems.map(i => i.product_id)))
         if (productIds.length > 0) {
+          // Fetch all products at once using or() filter
+          const orQuery = productIds.map(id => `id.eq.${id}`).join(',')
           const { data: prods } = await this.supabase
             .from('products')
             .select('id, category, brand, price')
-            .in('id', productIds)
+            .or(orQuery)
           
           products = prods || []
         }
@@ -217,8 +220,10 @@ export class AIRecommendationService {
             reasons.push('Highly rated by customers')
           }
 
+          const { stock_quantity, sku, ...productData } = product
           return {
-            ...product,
+            ...productData,
+            in_stock: stock_quantity > 0,
             score,
             reason: reasons.join(', ') || 'Recommended for you'
           }
@@ -285,8 +290,10 @@ export class AIRecommendationService {
             reasons.push('Similar price range')
           }
 
+          const { stock_quantity, sku, ...productData } = product
           return {
-            ...product,
+            ...productData,
+            in_stock: stock_quantity > 0,
             score,
             reason: reasons.join(', ') || 'Similar product'
           }
@@ -327,11 +334,20 @@ export class AIRecommendationService {
       if (!products) return []
 
       // Transform to recommendations with simpler scoring based on rating
-      const trendingProducts = products.map(product => ({
-        ...product,
-        score: (product.average_rating || 0) * 10 + (product.review_count || 0),
-        reason: `${product.average_rating?.toFixed(1)}★ rating (${product.review_count || 0} reviews)`
-      }))
+      const trendingProducts = products.map(product => {
+        const { stock_quantity, sku, ...productData } = product
+        const hasReviews = product.review_count && product.review_count > 0
+        const rating = product.average_rating && product.average_rating > 0
+        
+        return {
+          ...productData,
+          in_stock: stock_quantity > 0,
+          score: (product.average_rating || 0) * 10 + (product.review_count || 0),
+          reason: hasReviews && rating 
+            ? `${product.average_rating?.toFixed(1)}★ rating (${product.review_count} reviews)`
+            : 'Trending product'
+        }
+      })
 
       cacheService.set(cacheKey, trendingProducts, 180000) // Cache for 3 minutes
       return trendingProducts
@@ -374,11 +390,15 @@ export class AIRecommendationService {
 
       const recentlyViewedProducts = (await Promise.all(recentlyViewed))
         .filter(Boolean)
-        .map(product => ({
-          ...product,
-          score: 100,
-          reason: 'Recently viewed'
-        }))
+        .map(product => {
+          const { stock_quantity, sku, ...productData } = product
+          return {
+            ...productData,
+            in_stock: stock_quantity > 0,
+            score: 100,
+            reason: 'Recently viewed'
+          }
+        })
 
       const result = {
         recommendations,

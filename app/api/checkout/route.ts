@@ -3,6 +3,10 @@ import Stripe from "stripe"
 import { type NextRequest, NextResponse } from "next/server"
 import { AppConfig } from "@/lib/config"
 
+// Force dynamic - no caching for checkout
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
     throw new Error("STRIPE_SECRET_KEY environment variable is not set")
@@ -41,6 +45,28 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Validate stock availability before processing
+    for (const item of cartItems) {
+      const { data: product, error: productError } = await supabase
+        .from("products")
+        .select("stock_quantity, name")
+        .eq("id", item.id)
+        .single()
+
+      if (productError || !product) {
+        return NextResponse.json({ 
+          error: `Product "${item.name}" not found` 
+        }, { status: 400 })
+      }
+
+      const availableStock = product.stock_quantity || 0
+      if (availableStock < item.quantity) {
+        return NextResponse.json({ 
+          error: `Insufficient stock for "${product.name}". Only ${availableStock} available, but ${item.quantity} requested.` 
+        }, { status: 400 })
+      }
     }
 
     // Create line items for Stripe
@@ -165,6 +191,26 @@ export async function POST(request: NextRequest) {
         console.error("Database order items creation error:", itemsError)
         // Don't fail the checkout if order items fail - order is already created
         // Just log the error
+      }
+
+      // Reduce stock quantity for each product
+      for (const item of cartItems) {
+        const { data: product, error: productError } = await supabase
+          .from("products")
+          .select("stock_quantity")
+          .eq("id", item.id)
+          .single()
+
+        if (!productError && product) {
+          const newStock = Math.max(0, (product.stock_quantity || 0) - item.quantity)
+          
+          await supabase
+            .from("products")
+            .update({ stock_quantity: newStock })
+            .eq("id", item.id)
+          
+          console.log(`Stock reduced for product ${item.id}: ${product.stock_quantity} -> ${newStock}`)
+        }
       }
     }
 

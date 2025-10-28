@@ -22,19 +22,10 @@ export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [categories, setCategories] = useState<string[]>([])
-  const [stats, setStats] = useState({ 
-    totalCustomers: 0, 
-    totalProducts: 0,
-    totalOrders: 0,
-    averageOrderValue: 0,
-    activeUsers: 0,
-    totalRevenue: 0
-  })
 
   useEffect(() => {
     fetchProducts()
     fetchCategories()
-    fetchStats()
   }, [])
 
   const fetchProducts = async () => {
@@ -81,45 +72,6 @@ export default function HomePage() {
     }
   }
 
-  const fetchStats = async () => {
-    try {
-      const supabase = createClient()
-      
-      // Get total products count
-      const { count: productCount } = await supabase
-        .from("products")
-        .select("*", { count: "exact", head: true })
-        .eq("is_active", true)
-
-      // Get total users count
-      const { count: userCount } = await supabase
-        .from("user_profiles")
-        .select("*", { count: "exact", head: true })
-
-      // Get orders data
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("total, created_at, user_id")
-
-      const totalOrders = orders?.length || 0
-      const totalRevenue = orders?.reduce((sum, order) => sum + Number.parseFloat(order.total || 0), 0) || 0
-      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
-
-      // Get active users (users who have made orders)
-      const uniqueUsers = new Set(orders?.map(order => order.user_id)).size || 0
-
-      setStats({
-        totalCustomers: userCount || 0,
-        totalProducts: productCount || 0,
-        totalOrders,
-        averageOrderValue,
-        activeUsers: uniqueUsers,
-        totalRevenue
-      })
-    } catch (error) {
-      console.error("Error fetching stats:", error)
-    }
-  }
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget as HTMLImageElement;
@@ -135,22 +87,22 @@ export default function HomePage() {
       {/* Hero Section with Gradient Background */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-secondary/10" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32 relative z-10">
-          <div className="text-center space-y-8">
-            <div className="space-y-4">
-              <p className="text-sm font-bold text-primary uppercase tracking-widest">Welcome to Market Mosaic</p>
-              <h1 className="text-6xl md:text-7xl font-bold text-balance leading-tight">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 md:py-32 relative z-10">
+          <div className="text-center space-y-6 sm:space-y-8">
+            <div className="space-y-3 sm:space-y-4">
+              <p className="text-xs sm:text-sm font-bold text-primary uppercase tracking-widest">Welcome to Market Mosaic</p>
+              <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-balance leading-tight">
                 Discover Your{" "}
                 <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                   Perfect Match
                 </span>
               </h1>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
                 Explore curated products, tech innovations, and lifestyle essentials from trusted sellers.
                 Quality meets convenience.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
               <Link href="/products">
                 <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
                   Start Shopping
@@ -168,8 +120,8 @@ export default function HomePage() {
 
       {/* Category Showcase */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-3xl font-bold mb-12">Shop by Vibe</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12">Shop by Vibe</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {categories.slice(0, 3).map((category, index) => {
             const colors = ["from-primary", "from-accent", "from-secondary"]
             const icons = ["👕", "🎮", "✨"]
@@ -192,8 +144,8 @@ export default function HomePage() {
 
       {/* Featured Products */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="flex items-center justify-between mb-12">
-          <h2 className="text-3xl font-bold">Trending Now</h2>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold">Trending Now</h2>
           <Link href="/products">
             <Button variant="ghost" className="text-primary hover:text-primary/80">
               View All →
@@ -234,46 +186,6 @@ export default function HomePage() {
               <p className="text-muted-foreground">No products available yet</p>
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Ecommerce Stats Section */}
-      <section className="bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 my-16 rounded-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Platform Statistics</h2>
-            <p className="text-muted-foreground">Real-time metrics from our marketplace</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-            <div className="bg-background/50 rounded-lg p-6 border border-border/50">
-              <p className="text-4xl font-bold text-primary mb-2">
-                {stats.totalProducts > 0 ? `${stats.totalProducts}` : '0'}
-              </p>
-              <p className="text-muted-foreground">Active Products</p>
-              <p className="text-xs text-muted-foreground mt-1">Available for purchase</p>
-            </div>
-            <div className="bg-background/50 rounded-lg p-6 border border-border/50">
-              <p className="text-4xl font-bold text-accent mb-2">
-                {stats.totalOrders > 0 ? `${stats.totalOrders}` : '0'}
-              </p>
-              <p className="text-muted-foreground">Total Orders</p>
-              <p className="text-xs text-muted-foreground mt-1">Completed transactions</p>
-            </div>
-            <div className="bg-background/50 rounded-lg p-6 border border-border/50">
-              <p className="text-4xl font-bold text-secondary mb-2">
-                ${stats.totalRevenue > 0 ? stats.totalRevenue.toFixed(0) : '0'}
-              </p>
-              <p className="text-muted-foreground">Total Revenue</p>
-              <p className="text-xs text-muted-foreground mt-1">Platform earnings</p>
-            </div>
-            <div className="bg-background/50 rounded-lg p-6 border border-border/50">
-              <p className="text-4xl font-bold text-primary mb-2">
-                ${stats.averageOrderValue > 0 ? stats.averageOrderValue.toFixed(0) : '0'}
-              </p>
-              <p className="text-muted-foreground">Avg Order Value</p>
-              <p className="text-xs text-muted-foreground mt-1">Per transaction</p>
-            </div>
-          </div>
         </div>
       </section>
 

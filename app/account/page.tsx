@@ -12,6 +12,10 @@ import { ProfileEditor } from "@/components/profile-editor"
 import { SettingsManager } from "@/components/settings-manager"
 import { AccountSettings } from "@/components/account-settings"
 
+// Force dynamic rendering - always fetch fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AccountPage() {
   const supabase = await createClient()
 
@@ -63,11 +67,11 @@ export default async function AccountPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2">My Account</h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">My Account</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <span className="w-2 h-2 bg-primary rounded-full" />
               {profile?.first_name && profile?.last_name 
@@ -88,7 +92,7 @@ export default async function AccountPage() {
         </div>
 
         {/* Account Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
           <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-6 border border-primary/20">
             <p className="text-sm text-muted-foreground mb-2">Total Orders</p>
             <p className="text-3xl font-bold text-primary">{orders?.length || 0}</p>
@@ -110,7 +114,7 @@ export default async function AccountPage() {
 
         {/* Tabbed Interface */}
         <Tabs defaultValue="orders" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-6 sm:mb-8">
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Orders
@@ -131,9 +135,9 @@ export default async function AccountPage() {
 
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Order History</h2>
-              <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold">Order History</h2>
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/products">
                   <Button className="bg-primary hover:bg-primary/90">
                     <Package className="mr-2 h-4 w-4" />
@@ -175,6 +179,25 @@ export default async function AccountPage() {
                           {order.status || "pending"}
                         </span>
                       </div>
+
+                      {/* Tracking Info */}
+                      {order.tracking_number && (
+                        <div className="mt-4 pt-4 border-t border-primary/20">
+                          <p className="text-xs text-muted-foreground mb-1">Tracking</p>
+                          <p className="font-mono text-sm font-semibold flex items-center gap-2">
+                            {order.shipping_carrier ? (
+                              <>
+                                <span className="text-primary">{order.shipping_carrier.toUpperCase()}</span>
+                                <span className="text-muted-foreground">·</span>
+                              </>
+                            ) : null}
+                            {order.tracking_number.slice(0, 20)}...
+                          </p>
+                          <p className="text-xs text-primary mt-1 font-semibold group-hover:underline">
+                            Click to track order →
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </Link>
                 ))}

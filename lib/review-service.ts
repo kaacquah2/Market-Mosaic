@@ -31,63 +31,89 @@ export class ReviewService {
   private supabase = createClient()
 
   async getProductReviews(productId: string): Promise<ProductReview[]> {
-    const { data, error } = await this.supabase
-      .from("product_reviews")
-      .select(`
-        *,
-        user_profiles (
-          first_name,
-          last_name
-        )
-      `)
-      .eq("product_id", productId)
-      .order("created_at", { ascending: false })
+    try {
+      const { data, error } = await this.supabase
+        .from("product_reviews")
+        .select(`
+          *,
+          user_profiles (
+            first_name,
+            last_name
+          )
+        `)
+        .eq("product_id", productId)
+        .order("created_at", { ascending: false })
 
-    if (error) {
-      console.error("Error fetching reviews:", error)
+      if (error) {
+        // Table might not exist yet - silently return empty array
+        if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+          return []
+        }
+        console.error("Error fetching reviews:", error)
+        return []
+      }
+
+      return data || []
+    } catch (err) {
+      console.error("Unexpected error fetching reviews:", err)
       return []
     }
-
-    return data || []
   }
 
   async getReviewStats(productId: string): Promise<ReviewStats> {
-    const { data, error } = await this.supabase
-      .from("product_reviews")
-      .select("rating")
-      .eq("product_id", productId)
+    try {
+      const { data, error } = await this.supabase
+        .from("product_reviews")
+        .select("rating")
+        .eq("product_id", productId)
 
-    if (error) {
-      console.error("Error fetching review stats:", error)
+      if (error) {
+        // Table might not exist yet - silently return empty stats
+        if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+          return {
+            average_rating: 0,
+            total_reviews: 0,
+            rating_distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+          }
+        }
+        console.error("Error fetching review stats:", error)
+        return {
+          average_rating: 0,
+          total_reviews: 0,
+          rating_distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+        }
+      }
+
+      const reviews = data || []
+      const totalReviews = reviews.length
+
+      if (totalReviews === 0) {
+        return {
+          average_rating: 0,
+          total_reviews: 0,
+          rating_distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+        }
+      }
+
+      const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+
+      const ratingDistribution = reviews.reduce((dist, review) => {
+        dist[review.rating as keyof typeof dist]++
+        return dist
+      }, { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
+
+      return {
+        average_rating: Math.round(averageRating * 10) / 10,
+        total_reviews: totalReviews,
+        rating_distribution: ratingDistribution
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching review stats:", err)
       return {
         average_rating: 0,
         total_reviews: 0,
         rating_distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
       }
-    }
-
-    const reviews = data || []
-    const totalReviews = reviews.length
-
-    if (totalReviews === 0) {
-      return {
-        average_rating: 0,
-        total_reviews: 0,
-        rating_distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
-      }
-    }
-
-    const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
-
-    const ratingDistribution = reviews.reduce((dist, review) => {
-      dist[review.rating as keyof typeof dist]++
-      return dist
-    }, { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 })
-
-    return {
-      average_rating: Math.round(averageRating * 10) / 10,
-      total_reviews: totalReviews,
-      rating_distribution: ratingDistribution
     }
   }
 
@@ -150,24 +176,29 @@ export class ReviewService {
   }
 
   async getUserReview(productId: string): Promise<ProductReview | null> {
-    const { data: { user } } = await this.supabase.auth.getUser()
+    try {
+      const { data: { user } } = await this.supabase.auth.getUser()
 
-    if (!user) {
+      if (!user) {
+        return null
+      }
+
+      const { data, error } = await this.supabase
+        .from("product_reviews")
+        .select("*")
+        .eq("product_id", productId)
+        .eq("user_id", user.id)
+        .single()
+
+      if (error) {
+        // No review found or table doesn't exist - return null
+        return null
+      }
+
+      return data
+    } catch (err) {
       return null
     }
-
-    const { data, error } = await this.supabase
-      .from("product_reviews")
-      .select("*")
-      .eq("product_id", productId)
-      .eq("user_id", user.id)
-      .single()
-
-    if (error) {
-      return null
-    }
-
-    return data
   }
 
   async hasUserPurchasedProduct(productId: string): Promise<boolean> {

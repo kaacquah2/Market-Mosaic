@@ -24,32 +24,44 @@ export function CarrierTrackingLink({
   const formattedNumber = formatTrackingNumber(trackingNumber)
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {showCarrierName && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">Carrier:</span>
-          <span className="text-sm font-semibold" style={{ color: carrierInfo.color }}>
+        <div className="flex items-center gap-2 bg-primary/5 p-2 rounded">
+          <span className="text-sm font-medium text-muted-foreground">Shipping Carrier:</span>
+          <span 
+            className="text-sm font-semibold px-2 py-1 rounded"
+            style={{ 
+              backgroundColor: carrierInfo.color + "20",
+              color: carrierInfo.color 
+            }}
+          >
             {carrierInfo.name}
           </span>
         </div>
       )}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm text-muted-foreground">Tracking Number:</span>
-        <code className="text-sm font-mono bg-muted px-2 py-1 rounded">{formattedNumber}</code>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Tracking Number:</span>
+          <code className="text-sm font-mono bg-muted px-3 py-1.5 rounded border">{formattedNumber}</code>
+        </div>
         {trackingUrl !== "#" && (
           <Button
             asChild
-            variant="outline"
             size="sm"
-            className="h-7"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
-            <a href={trackingUrl} target="_blank" rel="noopener noreferrer">
+            <a href={trackingUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+              <ExternalLink className="h-4 w-4" />
               Track on {carrierInfo.name}
-              <ExternalLink className="ml-2 h-3 w-3" />
             </a>
           </Button>
         )}
       </div>
+      {trackingUrl === "#" && trackingNumber && (
+        <p className="text-xs text-muted-foreground italic">
+          Note: Please contact support for tracking assistance
+        </p>
+      )}
     </div>
   )
 }

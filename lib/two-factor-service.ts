@@ -4,6 +4,8 @@ export interface TwoFactorSetup {
   secret: string
   qrCodeUrl: string
   backupCodes: string[]
+  emailSent?: boolean
+  message?: string
 }
 
 export interface TwoFactorVerification {
@@ -50,32 +52,47 @@ export class TwoFactorService {
       throw new Error('2FA not set up for this user')
     }
 
-    // First, try to verify as TOTP token
-    const isValidToken = speakeasy.totp.verify({
-      secret: profile.two_factor_secret,
-      encoding: 'base32',
-      token: token,
-      window: 2 // Allow 2 time steps before/after current time
-    })
-
-    if (isValidToken) {
-      return { isValid: true }
-    }
-
-    // If TOTP fails, check if it's a backup code
-    if (profile.backup_codes && profile.backup_codes.includes(token)) {
-      // Remove the used backup code
-      const updatedBackupCodes = profile.backup_codes.filter((code: string) => code !== token)
+    // First, try to verify as TOTP token via API
+    try {
+      const response = await fetch('/api/2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'verify',
+          token: token,
+          secret: profile.two_factor_secret
+        })
+      })
       
-      await this.supabase
-        .from('user_profiles')
-        .update({ backup_codes: updatedBackupCodes })
-        .eq('user_id', userId)
+      if (!response.ok) {
+        throw new Error('Token verification failed')
+      }
+      
+      const data = await response.json()
+      const isValidToken = data.valid
 
-      return { isValid: true, backupCodeUsed: true }
+      if (isValidToken) {
+        return { isValid: true }
+      }
+
+      // If TOTP fails, check if it's a backup code
+      if (profile.backup_codes && profile.backup_codes.includes(token)) {
+        // Remove the used backup code
+        const updatedBackupCodes = profile.backup_codes.filter((code: string) => code !== token)
+        
+        await this.supabase
+          .from('user_profiles')
+          .update({ backup_codes: updatedBackupCodes })
+          .eq('user_id', userId)
+
+        return { isValid: true, backupCodeUsed: true }
+      }
+
+      return { isValid: false }
+    } catch (error) {
+      console.error('Error verifying token:', error)
+      return { isValid: false }
     }
-
-    return { isValid: false }
   }
 
   async enable2FA(userId: string, token: string): Promise<boolean> {

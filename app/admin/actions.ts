@@ -46,7 +46,7 @@ export async function updateAllProductsStock() {
     
     await Promise.all(updates)
     
-    return { success: true, updated: products.length }
+    return { success: true, updated: products.length, cacheClear: true }
   } catch (error) {
     console.error('Error updating stock:', error)
     return { success: false, error: 'Unexpected error occurred' }

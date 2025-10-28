@@ -1,17 +1,18 @@
-import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import { SessionManager } from "@/components/session-manager"
+import { Inter } from "next/font/google"
 import "./globals.css"
+import { Toaster } from "@/components/ui/toaster"
+import { ThemeProvider } from "@/components/theme-provider"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] })
+
+// Force dynamic rendering - no static generation or caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: "Market Mosaic - Your Marketplace Hub",
-  description: "Discover trending products, tech gadgets, and lifestyle essentials curated for modern shoppers",
-  generator: "v0.app",
+  title: "Market Mosaic - Premium E-Commerce",
+  description: "Your trusted online marketplace for quality products",
 }
 
 export default function RootLayout({
@@ -20,11 +21,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
-        <SessionManager />
-        {children}
-        <Analytics />
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   )

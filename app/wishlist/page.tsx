@@ -137,11 +137,11 @@ export default function WishlistPage() {
                   <p className="text-muted-foreground text-xs uppercase tracking-wide">{item.products.category}</p>
                   
                   {/* Rating */}
-                  {item.products.average_rating && item.products.average_rating > 0 && (
+                  {item.products.average_rating && item.products.average_rating > 0 && item.products.review_count && item.products.review_count > 0 && (
                     <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                       <span className="text-xs text-muted-foreground">
-                        {item.products.average_rating.toFixed(1)} ({item.products.review_count || 0})
+                        {item.products.average_rating.toFixed(1)} ({item.products.review_count})
                       </span>
                     </div>
                   )}

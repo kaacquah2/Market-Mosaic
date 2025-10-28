@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { updateAllProductsStock } from "@/app/admin/actions"
 import { Package } from "lucide-react"
+import { cacheService } from "@/lib/cache-service"
 
 export function UpdateStockButton() {
   const [loading, setLoading] = useState(false)
@@ -16,15 +17,20 @@ export function UpdateStockButton() {
     const response = await updateAllProductsStock()
     
     if (response.success) {
-      setResult({ success: true, message: `Successfully updated ${response.updated} products with stock!` })
+      // Clear all recommendation and product caches
+      cacheService.clear()
+      
+      setResult({ success: true, message: `Successfully updated ${response.updated} products! Cache cleared. Please refresh the page.` })
+      
+      // Auto-refresh after 2 seconds
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
     } else {
       setResult({ success: false, message: response.error || 'Failed to update stock' })
     }
     
     setLoading(false)
-    
-    // Clear the message after 5 seconds
-    setTimeout(() => setResult(null), 5000)
   }
 
   return (

@@ -1,10 +1,16 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { logoutAction } from "@/app/admin/actions"
+import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { AdminHeader } from "@/components/admin/admin-header"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { BarChart3, ShoppingCart, TrendingUp, Users, Bell } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { BarChart3, ShoppingCart, TrendingUp, Users, Bell, Package, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { UpdateStockButton } from "@/components/admin/update-stock-button"
+
+// Force dynamic rendering - always fetch fresh data
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -32,195 +38,290 @@ export default async function AdminPage() {
 
   const { data: orders } = await supabase.from("orders").select("*").order("created_at", { ascending: false })
 
+  const { data: allUsers } = await supabase.from("user_roles").select("*")
+
   const totalRevenue = orders?.reduce((sum: number, order: any) => sum + Number.parseFloat(order.total || 0), 0) || 0
   const totalCustomers = new Set(orders?.map((o: any) => o.user_id)).size || 0
   const avgOrderValue = orders && orders.length > 0 ? totalRevenue / orders.length : 0
+  const lowStockProducts = products?.filter((p: any) => (p.stock_quantity || 0) < 10).length || 0
+  const activeProducts = products?.filter((p: any) => p.is_active).length || 0
+
+  // Calculate previous period stats (last 30 days vs previous 30 days)
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+  
+  const recentOrders = orders?.filter((o: any) => new Date(o.created_at) >= thirtyDaysAgo) || []
+  const previousOrders = orders?.filter((o: any) => new Date(o.created_at) >= sixtyDaysAgo && new Date(o.created_at) < thirtyDaysAgo) || []
+  
+  const recentRevenue = recentOrders.reduce((sum: number, order: any) => sum + Number.parseFloat(order.total || 0), 0)
+  const previousRevenue = previousOrders.reduce((sum: number, order: any) => sum + Number.parseFloat(order.total || 0), 0)
+  const revenueChange = previousRevenue > 0 ? ((recentRevenue - previousRevenue) / previousRevenue) * 100 : 0
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="border-b border-border sticky top-0 z-50 bg-background/95 backdrop-blur">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-2xl font-bold bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent"
-          >
-            Market Mosaic Admin
-          </Link>
-          <div className="flex items-center gap-8">
-            <Link href="/admin" className="text-sm font-semibold text-primary">
-              Dashboard
-            </Link>
-            <Link href="/admin/products" className="text-sm font-semibold hover:text-primary transition-colors">
-              Products
-            </Link>
-            <form action={logoutAction}>
-              <button type="submit" className="text-sm font-semibold hover:text-primary transition-colors">
-                Logout
-              </button>
-            </form>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, {user?.email}</p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-6 border border-primary/20 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-muted-foreground">Total Products</p>
-              <BarChart3 className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-3xl font-bold text-primary">{products?.length || 0}</p>
-            <p className="text-xs text-muted-foreground mt-2">Active listings</p>
+    <div className="flex min-h-screen bg-background">
+      <AdminSidebar />
+      
+      <div className="flex-1 lg:ml-64">
+        <AdminHeader userEmail={user.email} />
+        
+        <main className="p-4 sm:p-6 space-y-6">
+          {/* Header */}
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {user?.email?.split("@")[0]}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-secondary/10 to-accent/10 rounded-lg p-6 border border-secondary/20 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-muted-foreground">Total Orders</p>
-              <ShoppingCart className="h-5 w-5 text-secondary" />
-            </div>
-            <p className="text-3xl font-bold text-secondary">{orders?.length || 0}</p>
-            <p className="text-xs text-muted-foreground mt-2">All time</p>
+          {/* Platform Statistics Section */}
+          <Card className="bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10">
+            <CardHeader>
+              <CardTitle className="text-2xl">Platform Statistics</CardTitle>
+              <CardDescription>Real-time metrics from our marketplace</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-background/80 rounded-lg p-6 border border-border/50 text-center">
+                  <p className="text-4xl font-bold text-primary mb-2">
+                    {activeProducts}
+                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">Active Products</p>
+                  <p className="text-xs text-muted-foreground mt-1">Available for purchase</p>
+                </div>
+                <div className="bg-background/80 rounded-lg p-6 border border-border/50 text-center">
+                  <p className="text-4xl font-bold text-accent mb-2">
+                    {orders?.length || 0}
+                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                  <p className="text-xs text-muted-foreground mt-1">Completed transactions</p>
+                </div>
+                <div className="bg-background/80 rounded-lg p-6 border border-border/50 text-center">
+                  <p className="text-4xl font-bold text-secondary mb-2">
+                    ${totalRevenue.toFixed(0)}
+                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                  <p className="text-xs text-muted-foreground mt-1">Platform earnings</p>
+                </div>
+                <div className="bg-background/80 rounded-lg p-6 border border-border/50 text-center">
+                  <p className="text-4xl font-bold text-primary mb-2">
+                    ${avgOrderValue.toFixed(0)}
+                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">Avg Order Value</p>
+                  <p className="text-xs text-muted-foreground mt-1">Per transaction</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                  {revenueChange >= 0 ? (
+                    <>
+                      <ArrowUpRight className="h-3 w-3 text-green-500" />
+                      <span className="text-green-500">+{revenueChange.toFixed(1)}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <ArrowDownRight className="h-3 w-3 text-red-500" />
+                      <span className="text-red-500">{revenueChange.toFixed(1)}%</span>
+                    </>
+                  )}
+                  <span>from last month</span>
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Orders</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{orders?.length || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  +{recentOrders.length} this month
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Customers</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{allUsers?.length || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {totalCustomers} have ordered
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Products</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{products?.length || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {lowStockProducts > 0 && (
+                    <span className="text-orange-500">{lowStockProducts} low stock</span>
+                  )}
+                  {lowStockProducts === 0 && "All in stock"}
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="bg-gradient-to-br from-accent/10 to-primary/10 rounded-lg p-6 border border-accent/20 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-muted-foreground">Total Revenue</p>
-              <TrendingUp className="h-5 w-5 text-accent" />
-            </div>
-            <p className="text-3xl font-bold text-accent">${totalRevenue.toFixed(2)}</p>
-            <p className="text-xs text-muted-foreground mt-2">Lifetime earnings</p>
+          {/* Overview Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Performance Overview</CardTitle>
+                <CardDescription>Key metrics for your business</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Avg Order Value</p>
+                    <p className="text-2xl font-bold">${avgOrderValue.toFixed(2)}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Conversion Rate</p>
+                    <p className="text-2xl font-bold">
+                      {products && products.length > 0
+                        ? (((orders?.length || 0) / (products.length * 10)) * 100).toFixed(1)
+                        : 0}%
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Active SKUs</p>
+                    <p className="text-2xl font-bold">{products?.length || 0}</p>
+                  </div>
+                </div>
+                <div className="mt-6 space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Orders This Month</span>
+                    <span className="font-medium">{recentOrders.length}</span>
+                  </div>
+                  <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${Math.min((recentOrders.length / (orders?.length || 1)) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {recentOrders.length} of {orders?.length || 0} total orders
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Common tasks</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Link href="/admin/products/new" className="block">
+                  <Button className="w-full justify-start" variant="outline">
+                    <Package className="mr-2 h-4 w-4" />
+                    Add New Product
+                  </Button>
+                </Link>
+                <Link href="/admin/orders-list" className="block">
+                  <Button className="w-full justify-start" variant="outline">
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    View All Orders
+                  </Button>
+                </Link>
+                <Link href="/admin/campaigns" className="block">
+                  <Button className="w-full justify-start" variant="outline">
+                    <Bell className="mr-2 h-4 w-4" />
+                    Create Campaign
+                  </Button>
+                </Link>
+                <div>
+                  <UpdateStockButton />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg p-6 border border-primary/20 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-muted-foreground">Customers</p>
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <p className="text-3xl font-bold text-primary">{totalCustomers}</p>
-            <p className="text-xs text-muted-foreground mt-2">Unique buyers</p>
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="bg-card rounded-lg p-6 border border-border mb-12">
-          <h2 className="text-lg font-bold mb-4">Performance Metrics</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Average Order Value</p>
-              <p className="text-2xl font-bold text-primary">${avgOrderValue.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Conversion Rate</p>
-              <p className="text-2xl font-bold text-accent">
-                {products && products.length > 0
-                  ? (((orders?.length || 0) / (products.length * 10)) * 100).toFixed(1)
-                  : 0}
-                %
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Inventory Status</p>
-              <p className="text-2xl font-bold text-secondary">{products?.length || 0} SKUs</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/admin/products/new">
-              <Button className="bg-primary hover:bg-primary/90">Add New Product</Button>
-            </Link>
-            <Link href="/admin/products">
-              <Button variant="outline" className="bg-transparent">
-                Manage Products
-              </Button>
-            </Link>
-            <UpdateStockButton />
-            <Link href="/admin/campaigns">
-              <Button variant="outline" className="bg-transparent">
-                <Bell className="h-4 w-4 mr-2" />
-                Manage Campaigns
-              </Button>
-            </Link>
-            <Link href="/support">
-              <Button variant="outline" className="bg-transparent">
-                View Support
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Recent Orders */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Recent Orders</h2>
-            <Link href="/admin/orders">
-              <Button variant="ghost" className="text-primary">
-                View All →
-              </Button>
-            </Link>
-          </div>
-          {orders && orders.length > 0 ? (
-            <div className="overflow-x-auto border border-border rounded-lg">
-              <table className="w-full text-sm">
-                <thead className="border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold">Order ID</th>
-                    <th className="text-left py-3 px-4 font-semibold">Customer</th>
-                    <th className="text-left py-3 px-4 font-semibold">Total</th>
-                    <th className="text-left py-3 px-4 font-semibold">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold">Tracking</th>
-                    <th className="text-left py-3 px-4 font-semibold">Date</th>
-                    <th className="text-left py-3 px-4 font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.slice(0, 10).map((order: any) => (
-                    <tr key={order.id} className="border-b border-border hover:bg-primary/5 transition-colors">
-                      <td className="py-3 px-4 font-mono text-xs">{order.id.slice(0, 8)}...</td>
-                      <td className="py-3 px-4 text-muted-foreground">{order.customer_email || "Guest"}</td>
-                      <td className="py-3 px-4 font-semibold text-primary">
-                        ${Number.parseFloat(order.total || 0).toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="bg-accent/20 text-accent px-2 py-1 rounded text-xs font-semibold">
+          {/* Recent Orders */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Recent Orders</CardTitle>
+                <CardDescription>Latest customer orders</CardDescription>
+              </div>
+              <Link href="/admin/orders-list">
+                <Button variant="ghost" size="sm">
+                  View All
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {orders && orders.length > 0 ? (
+                <div className="space-y-4">
+                  {orders.slice(0, 5).map((order: any) => (
+                    <div key={order.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium">Order #{order.id.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer_email || "Guest"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <p className="text-sm font-bold">${Number.parseFloat(order.total || 0).toFixed(2)}</p>
+                        <span className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-primary/10 text-primary">
                           {order.status || "pending"}
                         </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {order.tracking_number ? (
-                          <Link href={`/admin/orders/${order.id}`} className="text-primary hover:underline text-xs font-mono">
-                            {order.tracking_number}
-                          </Link>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">No tracking</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">{new Date(order.created_at).toLocaleDateString()}</td>
-                      <td className="py-3 px-4">
-                        <Link href={`/admin/orders/${order.id}`}>
-                          <Button variant="ghost" size="sm">View</Button>
-                        </Link>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="text-center py-12 border border-border rounded-lg bg-card">
-              <p className="text-muted-foreground">No orders yet</p>
-            </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground">No orders yet</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Low Stock Alert */}
+          {lowStockProducts > 0 && (
+            <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-900">
+              <CardHeader>
+                <CardTitle className="text-orange-600 dark:text-orange-400 flex items-center gap-2">
+                  <Bell className="h-5 w-5" />
+                  Low Stock Alert
+                </CardTitle>
+                <CardDescription>Products running low on inventory</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm mb-4">
+                  <span className="font-bold text-orange-600 dark:text-orange-400">{lowStockProducts}</span> products have less than 10 units in stock
+                </p>
+                <Link href="/admin/inventory">
+                  <Button variant="outline" size="sm">
+                    View Inventory
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           )}
-        </div>
+        </main>
       </div>
     </div>
   )

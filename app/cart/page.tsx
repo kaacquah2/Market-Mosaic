@@ -82,8 +82,8 @@ export default function CartPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold mb-12">Shopping Cart</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-8 sm:mb-12">Shopping Cart</h1>
 
         {cartItems.length === 0 ? (
           <div className="text-center py-12">
@@ -93,13 +93,13 @@ export default function CartPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12">
             {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {cartItems.map((item) => (
-                <div key={item.id} className="flex gap-6 pb-6 border-b border-border">
+                <div key={item.id} className="flex flex-col sm:flex-row gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-border">
                   {/* Product Image */}
-                  <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-full sm:w-24 h-48 sm:h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                     <img
                       src={item.products.image_url || "/placeholder.svg"}
                       alt={item.products.name}
@@ -111,12 +111,12 @@ export default function CartPage() {
                   {/* Product Details */}
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold mb-2">{item.products.name}</h3>
-                      <p className="text-muted-foreground">${item.products.price.toFixed(2)}</p>
+                      <h3 className="text-base sm:text-lg font-semibold mb-2">{item.products.name}</h3>
+                      <p className="text-muted-foreground text-sm sm:text-base">${item.products.price.toFixed(2)}</p>
                     </div>
 
                     {/* Quantity and Remove */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mt-4">
                       <div className="flex items-center gap-2">
                         <label className="text-sm text-muted-foreground">Qty:</label>
                         <Input
@@ -124,7 +124,7 @@ export default function CartPage() {
                           min="1"
                           value={item.quantity}
                           onChange={(e) => updateQuantity(item.id, Math.max(1, Number.parseInt(e.target.value) || 1))}
-                          className="w-16"
+                          className="w-16 h-8 sm:h-10"
                         />
                       </div>
                       <button onClick={() => removeItem(item.id)} className="text-sm text-destructive hover:underline">
@@ -134,7 +134,7 @@ export default function CartPage() {
                   </div>
 
                   {/* Line Total */}
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className="font-semibold">${(item.products.price * item.quantity).toFixed(2)}</p>
                   </div>
                 </div>
@@ -143,7 +143,7 @@ export default function CartPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-6 space-y-4 sticky top-20 border border-primary/20">
+              <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg p-4 sm:p-6 space-y-4 sticky top-16 sm:top-20 border border-primary/20">
                 <h2 className="text-xl font-bold">Order Summary</h2>
 
                 <div className="space-y-3 border-t border-border pt-4">
