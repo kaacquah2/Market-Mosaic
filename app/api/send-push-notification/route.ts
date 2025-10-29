@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { NotificationService } from '@/lib/notification-service'
+import webpush from 'web-push'
 
 // Send push notification API
 export async function POST(request: NextRequest) {
@@ -12,7 +11,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Send push notification using web-push
-    const webpush = require('web-push')
     
     // Configure web push
     webpush.setVapidDetails(

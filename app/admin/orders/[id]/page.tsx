@@ -42,7 +42,6 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
   const [order, setOrder] = useState<Order | null>(null)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
   const [isAdmin, setIsAdmin] = useState(false)
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -68,8 +67,6 @@ export default function AdminOrderDetailPage({ params }: { params: Promise<{ id:
         redirect("/auth/login")
         return
       }
-
-      setUser(currentUser)
 
       // Check if user is admin
       const { data: userRole } = await supabase

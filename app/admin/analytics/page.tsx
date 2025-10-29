@@ -11,8 +11,7 @@ import {
   Users, 
   TrendingUp, 
   ArrowUpRight, 
-  ArrowDownRight,
-  Package
+  ArrowDownRight
 } from "lucide-react"
 
 export default function AnalyticsPage() {

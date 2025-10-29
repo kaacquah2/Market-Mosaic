@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Truck, MapPin, Calendar, Package } from "lucide-react"
+import { MapPin, Calendar, Package } from "lucide-react"
 import { toast } from "sonner"
 
 interface OrderTrackingManagerProps {

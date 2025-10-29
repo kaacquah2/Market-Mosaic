@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
@@ -69,7 +69,7 @@ export default function CategoriesPage() {
       .select("category, price, id")
 
     // Fetch all orders to calculate revenue
-    const { data: orders } = await supabase
+    await supabase
       .from("orders")
       .select("id")
 

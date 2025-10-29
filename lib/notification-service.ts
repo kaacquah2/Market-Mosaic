@@ -324,7 +324,7 @@ export class NotificationService {
   private async getTargetUsers(criteria: any): Promise<{ user_id: string }[]> {
     try {
       const supabase = this.getSupabaseClient()
-      let query = supabase
+      const query = supabase
         .from('user_notification_preferences')
         .select('user_id')
 
@@ -464,7 +464,7 @@ export class NotificationService {
   async sendOrderUpdateNotification(userId: string, orderId: string, status: string): Promise<boolean> {
     try {
       let templateName = ''
-      let actionUrl = `/account/orders/${orderId}`
+      const actionUrl = `/account/orders/${orderId}`
 
       switch (status) {
         case 'confirmed':

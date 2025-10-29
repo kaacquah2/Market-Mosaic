@@ -40,7 +40,7 @@ export const CARRIERS: Record<Carrier, CarrierInfo> = {
   },
   other: {
     name: "Carrier",
-    trackingUrl: (trackingNumber) => `#`,
+    trackingUrl: (_trackingNumber) => `#`,
     color: "#666666",
   },
 }

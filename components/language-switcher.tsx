@@ -2,8 +2,7 @@
 
 import { useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Globe } from "lucide-react"
 
 const languages = [

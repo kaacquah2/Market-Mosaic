@@ -5,20 +5,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageCircle, Send, Plus, Clock, CheckCircle, AlertCircle } from "lucide-react"
-import { supportService, SupportTicket, SupportMessage } from "@/lib/support-service"
-import { createClient } from "@/lib/supabase/client"
+import { supportService, SupportTicket } from "@/lib/support-service"
 
 export function SupportChat() {
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
   const [loading, setLoading] = useState(true)
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [, setUnreadCount] = useState(0)
 
   useEffect(() => {
     fetchTickets()
@@ -62,21 +61,6 @@ export function SupportChat() {
       fetchUnreadCount()
     } catch (error) {
       console.error("Error selecting ticket:", error)
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'open':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />
-      case 'in_progress':
-        return <Clock className="h-4 w-4 text-blue-500" />
-      case 'resolved':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'closed':
-        return <CheckCircle className="h-4 w-4 text-gray-500" />
-      default:
-        return <Clock className="h-4 w-4 text-gray-500" />
     }
   }
 

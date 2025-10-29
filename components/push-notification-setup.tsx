@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationService } from '@/lib/notification-service'
-import { Bell, BellOff, Settings, CheckCircle, AlertCircle } from 'lucide-react'
+import { Bell, Settings, CheckCircle, AlertCircle } from 'lucide-react'
 
 interface NotificationPreferences {
   email_notifications: boolean

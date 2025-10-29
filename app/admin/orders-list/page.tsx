@@ -8,7 +8,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { 
   Select,
   SelectContent,
@@ -16,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Download, Filter } from "lucide-react"
+import { Search, Download } from "lucide-react"
 
 export default function OrdersListPage() {
   const [orders, setOrders] = useState<any[]>([])

@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -13,16 +11,13 @@ export function AccountSettings() {
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [marketingEmails, setMarketingEmails] = useState(false)
   const [pushNotifications, setPushNotifications] = useState(true)
-  const [loading, setLoading] = useState(true)
   const { toast } = useToast()
 
   useEffect(() => {
     // You can load saved preferences from database here
-    setLoading(false)
   }, [])
 
   const handleToggle = async (setting: string, value: boolean) => {
-    const supabase = createClient()
     
     // In a real app, you'd save these to your database
     // For now, we'll just show a toast

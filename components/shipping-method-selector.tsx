@@ -21,7 +21,7 @@ interface ShippingMethodSelectorProps {
   selectedCountry?: string
 }
 
-export function ShippingMethodSelector({ onMethodChange, selectedCountry = "US" }: ShippingMethodSelectorProps) {
+export function ShippingMethodSelector({ onMethodChange, selectedCountry: _selectedCountry = "US" }: ShippingMethodSelectorProps) {
   const [methods, setMethods] = useState<ShippingMethod[]>([])
   const [selectedMethod, setSelectedMethod] = useState<string>("")
   const [isLoading, setIsLoading] = useState(true)

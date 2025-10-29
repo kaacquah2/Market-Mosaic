@@ -123,15 +123,15 @@ async function fetchDHLTracking(trackingNumber: string): Promise<CarrierTracking
 
   try {
     // Get OAuth token using client credentials flow
-    const tokenResponse = await fetch('https://api.dhl.com/track/shipments', {
+    const url = new URL('https://api.dhl.com/track/shipments')
+    url.searchParams.set('trackingNumber', trackingNumber)
+    
+    const tokenResponse = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'DHL-API-Key': apiKey,
         'Accept': 'application/json'
-      },
-      params: new URLSearchParams({
-        trackingNumber: trackingNumber
-      })
+      }
     })
 
     if (!tokenResponse.ok) {

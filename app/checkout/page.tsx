@@ -126,7 +126,7 @@ export default function CheckoutPage() {
           if (errorData.error) {
             errorMessage = errorData.error
           }
-        } catch (e) {
+        } catch {
           // If JSON parsing fails, try as text
           const errorText = await response.text()
           console.error("Checkout API error (text):", errorText)

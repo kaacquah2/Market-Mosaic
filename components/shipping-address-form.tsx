@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Check, ChevronsUpDown } from "lucide-react"
@@ -274,7 +273,6 @@ export function ShippingAddressForm({ onAddressChange, initialAddress }: Shippin
   })
 
   const [errors, setErrors] = useState<Partial<Record<keyof ShippingAddress, string>>>({})
-  const [isValidating, setIsValidating] = useState(false)
 
   // Get address format configuration for current country
   const getAddressFormat = () => {
@@ -313,12 +311,13 @@ export function ShippingAddressForm({ onAddressChange, initialAddress }: Shippin
       case "country":
         if (!value.trim()) return "Country is required"
         break
-      case "phone":
+      case "phone": {
         if (!value.trim()) return "Phone number is required"
         // Basic phone validation - should contain at least 10 digits
         const phoneDigits = value.replace(/\D/g, '')
         if (phoneDigits.length < 10) return "Phone number must be at least 10 digits"
         break
+      }
     }
     return ""
   }
@@ -328,7 +327,6 @@ export function ShippingAddressForm({ onAddressChange, initialAddress }: Shippin
     
     // If country changes, clear state and postal code errors and reset their values if they're now optional
     if (name === "country") {
-      const newFormat = ADDRESS_FORMATS[value] || ADDRESS_FORMATS.DEFAULT
       const updatedErrors = { ...errors }
       delete updatedErrors.state
       delete updatedErrors.postalCode

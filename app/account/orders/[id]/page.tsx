@@ -50,9 +50,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [trackingHistory, setTrackingHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [autoRefresh] = useState(true)
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget as HTMLImageElement;
@@ -116,16 +114,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         return
       }
 
-      setUser(currentUser)
-
       // Fetch user profile
       const { data: profileData } = await supabase
         .from("user_profiles")
         .select("*")
         .eq("user_id", currentUser.id)
         .single()
-
-      setUserProfile(profileData)
 
       // Fetch order
       const { data: orderData } = await supabase

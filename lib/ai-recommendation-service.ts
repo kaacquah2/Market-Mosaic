@@ -88,7 +88,7 @@ export class AIRecommendationService {
       const viewedProducts: string[] = []
       const wishlistItems: string[] = []
       let totalSpent = 0
-      let orderCount = orders?.length || 0
+      const orderCount = orders?.length || 0
 
       // Calculate total spent
       orders?.forEach(order => {
@@ -170,7 +170,7 @@ export class AIRecommendationService {
         .filter(product => !preferences.purchaseHistory.includes(product.id))
         .map(product => {
           let score = 0
-          let reasons: string[] = []
+          const reasons: string[] = []
 
           // Category preference (40% weight)
           if (preferences.categories.includes(product.category)) {
@@ -220,7 +220,7 @@ export class AIRecommendationService {
             reasons.push('Highly rated by customers')
           }
 
-          const { stock_quantity, sku, ...productData } = product
+          const { stock_quantity, sku: _sku, ...productData } = product
           return {
             ...productData,
             in_stock: stock_quantity > 0,
@@ -268,7 +268,7 @@ export class AIRecommendationService {
       const similarProducts = products
         .map(product => {
           let score = 0
-          let reasons: string[] = []
+          const reasons: string[] = []
 
           // Same category (50% weight)
           if (product.category === targetProduct.category) {
@@ -290,7 +290,7 @@ export class AIRecommendationService {
             reasons.push('Similar price range')
           }
 
-          const { stock_quantity, sku, ...productData } = product
+          const { stock_quantity, sku: _sku, ...productData } = product
           return {
             ...productData,
             in_stock: stock_quantity > 0,
@@ -335,7 +335,7 @@ export class AIRecommendationService {
 
       // Transform to recommendations with simpler scoring based on rating
       const trendingProducts = products.map(product => {
-        const { stock_quantity, sku, ...productData } = product
+        const { stock_quantity, sku: _sku, ...productData } = product
         const hasReviews = product.review_count && product.review_count > 0
         const rating = product.average_rating && product.average_rating > 0
         
@@ -391,7 +391,7 @@ export class AIRecommendationService {
       const recentlyViewedProducts = (await Promise.all(recentlyViewed))
         .filter(Boolean)
         .map(product => {
-          const { stock_quantity, sku, ...productData } = product
+          const { stock_quantity, sku: _sku, ...productData } = product
           return {
             ...productData,
             in_stock: stock_quantity > 0,

@@ -196,7 +196,7 @@ export class ReviewService {
       }
 
       return data
-    } catch (err) {
+    } catch {
       return null
     }
   }

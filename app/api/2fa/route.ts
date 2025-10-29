@@ -1,6 +1,4 @@
 import { createClient } from "@/lib/supabase/server"
-import speakeasy from 'speakeasy'
-import QRCode from 'qrcode'
 
 export interface TwoFactorSetup {
   secret: string
@@ -18,7 +16,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { action, token, code } = await request.json()
+    const { action, code } = await request.json()
 
     switch (action) {
       case 'generate': {
@@ -92,7 +90,7 @@ export async function POST(request: Request) {
         }
 
         // Store backup codes
-        const { error: updateError } = await supabase
+        await supabase
           .from('user_profiles')
           .update({
             backup_codes: backupCodes

@@ -17,7 +17,6 @@ import {
   Mail, 
   Bell, 
   Shield, 
-  Palette,
   Save
 } from "lucide-react"
 

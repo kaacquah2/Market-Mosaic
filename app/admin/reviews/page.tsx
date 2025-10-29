@@ -4,10 +4,8 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminHeader } from "@/components/admin/admin-header"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Star, Inbox, CheckCircle, XCircle } from "lucide-react"
+import { Star, Inbox, CheckCircle } from "lucide-react"
 
 export default function ReviewsPage() {
   const [loading, setLoading] = useState(true)

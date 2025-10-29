@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Mail, ShoppingBag, Calendar, MoreVertical } from "lucide-react"
+import { Search, Mail, ShoppingBag, MoreVertical } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,

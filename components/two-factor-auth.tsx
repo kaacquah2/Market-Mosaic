@@ -9,10 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Shield, Smartphone, Key, AlertTriangle, CheckCircle, Copy, Download, Mail } from "lucide-react"
+import { Shield, Key, AlertTriangle, CheckCircle, Copy, Download, Mail } from "lucide-react"
 import { twoFactorService, TwoFactorSetup } from "@/lib/two-factor-service"
 import { createClient } from "@/lib/supabase/client"
-import Image from "next/image"
 
 export function TwoFactorSettings() {
   const [isEnabled, setIsEnabled] = useState(false)

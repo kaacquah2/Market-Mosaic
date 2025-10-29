@@ -5,7 +5,7 @@ import { AdminHeader } from "@/components/admin/admin-header"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart3, ShoppingCart, TrendingUp, Users, Bell, Package, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { ShoppingCart, Users, Bell, Package, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react"
 import { UpdateStockButton } from "@/components/admin/update-stock-button"
 
 // Force dynamic rendering - always fetch fresh data

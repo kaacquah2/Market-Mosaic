@@ -16,7 +16,6 @@ export default function WishlistPage() {
   const { toast } = useToast()
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
     checkAuth()
@@ -33,7 +32,6 @@ export default function WishlistPage() {
       return
     }
 
-    setUser(user)
     fetchWishlist()
   }
 

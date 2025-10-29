@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2, Circle, Package, Truck, MapPin, Home } from "lucide-react"
+import { CheckCircle2, Package, Truck, MapPin, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface TimelineStep {

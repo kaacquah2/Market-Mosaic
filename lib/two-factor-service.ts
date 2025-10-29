@@ -16,7 +16,7 @@ export interface TwoFactorVerification {
 export class TwoFactorService {
   private supabase = createClient()
 
-  async generateSecret(userId: string): Promise<TwoFactorSetup> {
+  async generateSecret(_userId: string): Promise<TwoFactorSetup> {
     try {
       const response = await fetch('/api/2fa', {
         method: 'POST',
@@ -135,7 +135,7 @@ export class TwoFactorService {
     }
   }
 
-  async is2FAEnabled(userId: string): Promise<boolean> {
+  async is2FAEnabled(_userId: string): Promise<boolean> {
     try {
       const response = await fetch('/api/2fa', {
         method: 'POST',
